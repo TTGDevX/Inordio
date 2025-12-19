@@ -1,0 +1,207 @@
+// ===========================================
+// INORDIO DATABASE SCHEMA
+// ===========================================
+// Multi-tenant field service management platform
+// Using PostgreSQL with Row-Level Security
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+// ENUMS
+// ===========================================
+
+enum Plan {
+  TRIAL
+  SOLO
+  TEAM
+  PRO
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  OFFICE
+  TECHNICIAN
+  VIEWER
+}
+
+enum UserStatus {
+  PENDING    // Invited but not yet accepted
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum LocationType {
+  WAREHOUSE
+  TRUCK
+  JOBSITE
+}
+
+// ===========================================
+// TENANT & USERS
+// ===========================================
+
+model Tenant {
+  id        String       @id @default(uuid())
+  slug      String       @unique  // subdomain: acme-plumbing
+  status    TenantStatus @default(ACTIVE)
+  plan      Plan         @default(TRIAL)
+  
+  // Encrypted fields (stored as base64 strings for simplicity)
+  encryptedName     String   // Company name
+  encryptedAddress  String?  // Business address
+  encryptedPhone    String?  // Business phone
+  encryptedEmail    String?  // Business email
+  encryptedSettings String?  // JSON blob of tenant settings
+  
+  // Unencrypted (needed for billing/admin)
+  trialEndsAt       DateTime?
+  subscriptionId    String?   // Stripe subscription ID
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  users     User[]
+  locations Location[]
+  
+  @@index([slug])
+  @@index([status])
+}
+
+model User {
+  id        String     @id @default(uuid())
+  tenantId  String
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Auth
+  email     String
+  password  String     // Hashed
+  role      UserRole   @default(TECHNICIAN)
+  status    UserStatus @default(PENDING)
+  
+  // Encrypted profile
+  encryptedName  String
+  encryptedPhone String?
+  
+  // Encryption key management
+  // The user's encryption key is wrapped with their password-derived key
+  wrappedEncryptionKey String?
+  keySalt              String?  // Salt for password-based key derivation
+  
+  // MFA
+  mfaEnabled    Boolean @default(false)
+  mfaSecret     String?
+  
+  // Sessions
+  lastLoginAt   DateTime?
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  assignedLocation Location? @relation("AssignedTruck")
+  
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([email])
+}
+
+// ===========================================
+// LOCATIONS
+// ===========================================
+
+model Location {
+  id        String       @id @default(uuid())
+  tenantId  String
+  type      LocationType
+  
+  // Encrypted
+  encryptedName    String
+  encryptedAddress String?
+  
+  // Unencrypted (for queries)
+  isActive  Boolean @default(true)
+  
+  // Truck-specific
+  assignedUserId String?  @unique
+  assignedUser   User?    @relation("AssignedTruck", fields: [assignedUserId], references: [id])
+  
+  // Vehicle info for trucks (encrypted)
+  encryptedVehicleInfo String?  // JSON: make, model, year, plate
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Note: Relations to StockLevel, StockTransfer, etc. will be added in Phase 1
+  
+  @@index([tenantId])
+  @@index([tenantId, type])
+  @@index([tenantId, isActive])
+}
+
+// ===========================================
+// AUDIT LOG
+// ===========================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  
+  // What happened
+  action    String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entity    String   // User, Location, Job, etc.
+  entityId  String?
+  
+  // Encrypted details (contains before/after state)
+  encryptedDetails String?
+  
+  // Unencrypted metadata
+  ipAddress String?
+  userAgent String?
+  
+  // Timestamp
+  createdAt DateTime @default(now())
+  
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entity])
+}
+
+// ===========================================
+// ROW LEVEL SECURITY
+// ===========================================
+// 
+// After running migrations, execute the following SQL to enable RLS:
+//
+// -- Enable RLS on all tenant tables
+// ALTER TABLE "Tenant" ENABLE ROW LEVEL SECURITY;
+// ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
+// ALTER TABLE "Location" ENABLE ROW LEVEL SECURITY;
+// ALTER TABLE "AuditLog" ENABLE ROW LEVEL SECURITY;
+//
+// -- Create policies (example for User table)
+// CREATE POLICY tenant_isolation ON "User"
+//   USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+//
+// -- See docs/DATABASE.md for complete RLS setup
+// ===========================================
