@@ -85,7 +85,7 @@ php artisan serve
 Rules:
 - **Every model needs tenant_id** — use a trait or base model
 - **Test tenant isolation early and often** — data leakage between tenants is the worst possible bug in this product
-- Tenant identification: subdomain (ttg.inordio.ca) or path-based — confirm with Scott if not already settled in the repo
+- Tenant identification: **resolved from the authenticated user for now** (app is served by IP during alpha — no subdomains available). One login page; each user belongs to a tenant; all requests scoped to that tenant after auth. Design so subdomain identification (ttg.inordio.ca) can be enabled later without rework once domains/TLS exist.
 
 ### Encryption
 **Server-side encryption** for sensitive fields using Laravel's built-in encrypted casts:
@@ -103,6 +103,15 @@ Everything is built **natively in Inordio as a single codebase**. Do not fork or
 
 ### Platform
 Web app, **mobile-first UI** (techs use phones in the field, sometimes in basements with no signal). PWA approach — installable, no app stores, instant updates. Offline support is an open question (see §9).
+
+### Deployment (alpha/beta)
+Runs on TTG's Proxmox infrastructure under **Pterodactyl**, which TTG already uses as a general-purpose container orchestrator (the panel itself is Laravel — same stack). Plan:
+
+1. **Now:** app served **by IP** — no domain, no subdomains, no TLS termination concerns during early alpha
+2. **Once stable:** package Inordio as a **Pterodactyl egg** — app container (PHP/nginx) + queue worker + `schedule:work` as persistent processes; MySQL outside the egg
+3. **Before external beta:** front with a reverse proxy + wildcard TLS (`*.inordio.ca`), enable subdomain tenant identification, settle backup strategy (MySQL dumps + storage)
+
+Zero-downtime deploys are explicitly not a goal until external customers exist.
 
 ---
 
@@ -294,8 +303,8 @@ Architecture rule: Inordio talks to a single internal `AiGateway` service class 
 - [ ] Offline sync strategy for the mobile PWA (techs in no-signal basements)
 - [ ] OCR provider for receipt scanning: local AI gateway (preferred, see §8) vs Google Vision vs AWS Textract
 - [ ] AI gateway details: endpoint, protocol, models, auth (see §8)
-- [ ] Hosting: Scott's Proxmox infrastructure initially vs cloud-native from the start
-- [ ] Tenant identification: subdomain vs path-based
+- [x] Hosting: **decided** — Pterodactyl on Scott's Proxmox infra; IP access now, packaged as a Pterodactyl egg once stable (see §3 Deployment)
+- [x] Tenant identification: **decided** — resolved from authenticated user during alpha (IP access, no subdomains); subdomain identification enabled later (see §3)
 - [ ] Current actual state of the repo — it was scaffolded in Dec 2025; **audit what exists before writing new code**
 
 ---
