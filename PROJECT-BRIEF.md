@@ -113,6 +113,13 @@ Runs on TTG's Proxmox infrastructure under **Pterodactyl**, which TTG already us
 
 Zero-downtime deploys are explicitly not a goal until external customers exist.
 
+**Env-pinned tenants:** egg instances can carry a `TENANT_ID` environment variable. Tenant identification resolves in this order:
+1. `TENANT_ID` env set → instance is dedicated to that tenant (no resolution logic; login scoped to it)
+2. No env pin → tenant resolved from the authenticated user (shared instance)
+3. Later: subdomain identification
+
+One codebase, three deployment shapes: single pinned instance (alpha), shared SaaS instance (standard tier), dedicated instance per customer (premium/white-label upsell — Pterodactyl makes provisioning these trivial). Guardrail: the env pin *scopes* queries but never replaces tenant checks — `tenant_id` columns and isolation tests stay mandatory on pinned instances too, so a misconfigured env var can't leak another tenant's data.
+
 ---
 
 ## 4. Feature Map
