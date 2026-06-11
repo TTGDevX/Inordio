@@ -1,129 +1,35 @@
 # Inordio
 
-> **Keep your business in order.**
+> *Keep your business in order* — multi-tenant field service management for trades businesses.
 
-Inordio is a field service management platform built for trades businesses - MSPs, plumbers, HVAC technicians, electricians, and more. Real inventory tracking, truck stock management, job scheduling, invoicing, and Canadian payment processing - all in one place.
+Inordio is a SaaS platform for MSPs, plumbing, HVAC, electrical, and other field service companies. Its core differentiator is **real inventory**: actual quantities tracked per location (warehouse + trucks), serialized assets with nested assemblies, QR pick lists, and a quote → job → invoice chain that always knows what was used.
 
-## ✨ Features
+**Read [PROJECT-BRIEF.md](PROJECT-BRIEF.md) first** — it is the source of truth for product scope and architecture decisions.
 
-### Core
-- 📦 **Real Inventory** - Not just a price list. Track actual quantities across warehouses and trucks.
-- 🚚 **Truck Stock** - Know what's in every vehicle. Transfer parts between locations.
-- 📝 **Quotes & Jobs** - From quote approval to job completion to invoice.
-- 💰 **Canadian Payments** - Stripe, Square, Interac, e-Transfer, PAD (Rotessa), PayPal.
-- 🔐 **End-to-End Encryption** - Your customers' data is encrypted. Even we can't see it.
+## Stack
 
-### Field Operations
-- 📅 **Scheduling Board** - Drag-and-drop dispatch. See your whole team at a glance.
-- 🔧 **Equipment Tracking** - Track what you've installed at each customer. Warranty alerts.
-- ✅ **Checklists** - Inspection forms, job completion checklists, compliance documentation.
-- 🧾 **Expense Tracking** - Snap a receipt, OCR extracts the data, submit for approval.
-- 📱 **Mobile Ready** - PWA that works offline for techs in basements.
+Laravel 12 · Livewire 3 (Breeze) · MySQL 8 · stancl/tenancy · Tailwind CSS
 
-### Business
-- 🔄 **Service Agreements** - Recurring maintenance contracts with auto-generated jobs.
-- 📊 **Reports & Analytics** - Revenue, tech performance, inventory turnover.
-- 🤖 **Discord Integration** - Command center for your operations.
-- 📚 **Sage Integration** - Sync invoices, payments, and expenses.
+## Local development
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- pnpm 8+
-- PostgreSQL 16+
-- Docker (optional, for local development)
-
-### Installation
+Requires PHP 8.4+, Composer, Node 20+, MySQL 8 (Windows: [Laravel Herd](https://herd.laravel.com) provides PHP/Composer).
 
 ```bash
-# Clone the repository
-git clone https://github.com/TTGDevX/Inordio.git
-cd Inordio
-
-# Install dependencies
-pnpm install
-
-# Copy environment file
-cp .env.example .env
-
-# Start PostgreSQL (if using Docker)
-docker compose up -d postgres
-
-# Run database migrations
-pnpm db:migrate
-
-# Seed development data (optional)
-pnpm db:seed
-
-# Start development server
-pnpm dev
+composer install
+npm install && npm run build
+cp .env.example .env        # set DB_DATABASE=inordio, DB_USERNAME/PASSWORD
+php artisan key:generate
+php artisan migrate
+php artisan serve
 ```
 
-Visit `http://localhost:3000` to see the app.
-
-## 📁 Project Structure
-
-```
-inordio/
-├── apps/
-│   ├── web/              # Next.js main application
-│   └── discord-bot/      # Discord bot
-├── packages/
-│   ├── database/         # Prisma schema, migrations
-│   ├── core/             # Shared business logic
-│   ├── encryption/       # E2EE utilities
-│   └── ui/               # Shared UI components
-├── infrastructure/
-│   └── docker/           # Docker configs
-├── docs/                 # Documentation
-└── scripts/              # Utility scripts
-```
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 14, React, Tailwind CSS, Shadcn/UI |
-| Backend | Next.js API Routes, tRPC |
-| Database | PostgreSQL with Row-Level Security |
-| ORM | Prisma |
-| Auth | Better-Auth |
-| Payments | Stripe, Square, Rotessa |
-| Monorepo | pnpm + Turborepo |
-
-## 📖 Documentation
-
-- [Architecture](./docs/ARCHITECTURE.md)
-- [Database Schema](./docs/DATABASE.md)
-- [API Reference](./docs/API.md)
-- [Encryption](./docs/ENCRYPTION.md)
-- [Deployment](./docs/DEPLOYMENT.md)
-
-## 🧪 Development
+Run tests:
 
 ```bash
-# Run all tests
-pnpm test
-
-# Type checking
-pnpm typecheck
-
-# Linting
-pnpm lint
-
-# Format code
-pnpm format
-
-# Database studio
-pnpm db:studio
+php artisan test
 ```
 
-## 📄 License
+## Repository notes
 
-Proprietary - All rights reserved by TTG Development.
-
----
-
-Built with ☕ in London, Ontario, Canada.
+- The original Next.js scaffold (Dec 2025) lives on the `archive/nextjs-scaffold-2025` branch; what was carried forward is documented in [docs/LEGACY-SCAFFOLD-NOTES.md](docs/LEGACY-SCAFFOLD-NOTES.md).
+- Every tenant-scoped table must carry `tenant_id`; tenant isolation is tested with every feature. See the brief, §3.
