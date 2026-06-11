@@ -108,7 +108,7 @@ Web app, **mobile-first UI** (techs use phones in the field, sometimes in baseme
 Runs on TTG's Proxmox infrastructure under **Pterodactyl**, which TTG already uses as a general-purpose container orchestrator (the panel itself is Laravel — same stack). Plan:
 
 1. **Now:** app served **by IP** — no domain, no subdomains, no TLS termination concerns during early alpha
-2. **Once stable:** package Inordio as a **Pterodactyl egg** — app container (PHP/nginx) + queue worker + `schedule:work` as persistent processes; MySQL outside the egg
+2. **Once stable:** package Inordio as a **Pterodactyl egg** — app container (PHP/nginx) + queue worker + `schedule:work` as persistent processes; MySQL runs as its own Pterodactyl server (databases live in Pterodactyl too)
 3. **Before external beta:** front with a reverse proxy + wildcard TLS (`*.inordio.ca`), enable subdomain tenant identification, settle backup strategy (MySQL dumps + storage)
 
 Zero-downtime deploys are explicitly not a goal until external customers exist.
