@@ -1,11 +1,22 @@
 <?php
 
+use App\Exceptions\InsufficientStockException;
 use App\Models\InventoryItem;
+use App\Models\Location;
+use App\Services\StockManager;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
 new #[Layout('layouts.app')] class extends Component {
     public InventoryItem $item;
+
+    // Stock-action form state.
+    public string $action = 'receive';
+    public ?int $from_location_id = null;
+    public ?int $to_location_id = null;
+    public string $quantity = '';
+    public string $note = '';
+    public string $statusMessage = '';
 
     /**
      * Resolve the item here rather than via implicit route-model binding.
@@ -22,11 +33,64 @@ new #[Layout('layouts.app')] class extends Component {
             ->findOrFail($itemId);
     }
 
+    protected function actionRules(): array
+    {
+        $rules = [
+            'action' => ['required', 'in:receive,transfer,consume'],
+            'quantity' => ['required', 'numeric', 'gt:0'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ];
+
+        if (in_array($this->action, ['transfer', 'consume'], true)) {
+            $rules['from_location_id'] = ['required', 'integer', 'exists:locations,id'];
+        }
+
+        if (in_array($this->action, ['receive', 'transfer'], true)) {
+            $rules['to_location_id'] = ['required', 'integer', 'exists:locations,id'];
+        }
+
+        if ($this->action === 'transfer') {
+            $rules['to_location_id'][] = 'different:from_location_id';
+        }
+
+        return $rules;
+    }
+
+    public function applyAction(StockManager $stock): void
+    {
+        $this->validate($this->actionRules());
+
+        $qty = (float) $this->quantity;
+        $note = trim($this->note) !== '' ? trim($this->note) : null;
+        $user = auth()->user();
+
+        try {
+            match ($this->action) {
+                'receive' => $stock->receive($this->item, Location::findOrFail($this->to_location_id), $qty, $user, $note),
+                'transfer' => $stock->transfer($this->item, Location::findOrFail($this->from_location_id), Location::findOrFail($this->to_location_id), $qty, $user, $note),
+                'consume' => $stock->consume($this->item, Location::findOrFail($this->from_location_id), $qty, $user, $note),
+            };
+        } catch (InsufficientStockException) {
+            $this->addError('quantity', 'Not enough stock at the source location.');
+
+            return;
+        } catch (\InvalidArgumentException $e) {
+            $this->addError('quantity', $e->getMessage());
+
+            return;
+        }
+
+        $this->reset(['quantity', 'note', 'from_location_id', 'to_location_id']);
+        $this->item->load('stockLevels.location');
+        $this->statusMessage = ucfirst($this->action).' recorded.';
+    }
+
     public function with(): array
     {
         return [
             'levels' => $this->item->stockLevels->sortBy(fn ($l) => $l->location->name),
             'total' => (float) $this->item->stockLevels->sum('quantity'),
+            'locations' => Location::where('is_active', true)->orderBy('name')->get(),
         ];
     }
 }; ?>
@@ -34,10 +98,16 @@ new #[Layout('layouts.app')] class extends Component {
 <div class="py-6 sm:py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
 
-        <a href="{{ route('inventory.index') }}" wire:navigate
-           class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
-            &larr; Back to inventory
-        </a>
+        <div class="flex items-center justify-between">
+            <a href="{{ route('inventory.index') }}" wire:navigate
+               class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to inventory</a>
+            <a href="{{ route('inventory.edit', $item->id) }}" wire:navigate
+               class="text-sm text-indigo-600 hover:text-indigo-800">Edit item</a>
+        </div>
+
+        @if ($statusMessage)
+            <div class="rounded-md bg-green-50 px-4 py-3 text-sm text-green-800">{{ $statusMessage }}</div>
+        @endif
 
         <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
             <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
@@ -124,6 +194,68 @@ new #[Layout('layouts.app')] class extends Component {
                     @endforeach
                 </ul>
             @endif
+        </div>
+
+        {{-- Stock actions --}}
+        <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
+            <h2 class="font-medium text-gray-800">Move stock</h2>
+
+            <form wire:submit="applyAction" class="mt-4 space-y-4">
+                <div class="flex flex-wrap gap-2">
+                    @foreach (['receive' => 'Receive', 'transfer' => 'Transfer', 'consume' => 'Consume'] as $value => $label)
+                        <button type="button" wire:click="$set('action', '{{ $value }}')"
+                            class="px-3 py-1.5 rounded-full text-sm font-medium border
+                                {{ $action === $value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' }}">
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    @if (in_array($action, ['transfer', 'consume'], true))
+                        <div>
+                            <x-input-label for="from_location_id" value="From" />
+                            <select id="from_location_id" wire:model="from_location_id"
+                                class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">— Select location —</option>
+                                @foreach ($locations as $location)
+                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('from_location_id')" class="mt-2" />
+                        </div>
+                    @endif
+
+                    @if (in_array($action, ['receive', 'transfer'], true))
+                        <div>
+                            <x-input-label for="to_location_id" value="To" />
+                            <select id="to_location_id" wire:model="to_location_id"
+                                class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">— Select location —</option>
+                                @foreach ($locations as $location)
+                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('to_location_id')" class="mt-2" />
+                        </div>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <x-input-label for="quantity" value="Quantity" />
+                        <x-text-input id="quantity" wire:model="quantity" type="number" step="0.01" min="0" class="block mt-1 w-full" />
+                        <x-input-error :messages="$errors->get('quantity')" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-input-label for="note" value="Note (optional)" />
+                        <x-text-input id="note" wire:model="note" class="block mt-1 w-full" />
+                        <x-input-error :messages="$errors->get('note')" class="mt-2" />
+                    </div>
+                </div>
+
+                <x-primary-button>Record {{ $action }}</x-primary-button>
+            </form>
         </div>
     </div>
 </div>

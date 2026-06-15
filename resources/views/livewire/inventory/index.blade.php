@@ -40,18 +40,22 @@ new #[Layout('layouts.app')] class extends Component {
 <div class="py-6 sm:py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
 
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center justify-between gap-3">
             <h1 class="text-xl font-semibold text-gray-800">Inventory</h1>
+            <a href="{{ route('inventory.create') }}" wire:navigate
+               class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                Add item
+            </a>
+        </div>
 
-            <div class="relative">
-                <input
-                    type="search"
-                    wire:model.live.debounce.300ms="search"
-                    placeholder="Search name, SKU or barcode"
-                    class="w-full sm:w-80 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                    autocomplete="off"
-                />
-            </div>
+        <div class="relative">
+            <input
+                type="search"
+                wire:model.live.debounce.300ms="search"
+                placeholder="Search name, SKU or barcode"
+                class="w-full sm:w-96 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                autocomplete="off"
+            />
         </div>
 
         <div wire:loading.delay class="text-sm text-gray-400">Searching…</div>
