@@ -12,11 +12,14 @@ new #[Layout('layouts.app')] class extends Component {
      * By the time the component mounts, the IdentifyTenant middleware has
      * initialized tenancy, so findOrFail runs under the BelongsToTenant global
      * scope and a request for another tenant's id correctly 404s.
+     *
+     * The route param is {itemId} (not {item}) on purpose — a name matching the
+     * $item property would make Livewire route-model-bind it and skip this.
      */
-    public function mount(string $item): void
+    public function mount(string $itemId): void
     {
         $this->item = InventoryItem::with(['category', 'supplier', 'stockLevels.location'])
-            ->findOrFail($item);
+            ->findOrFail($itemId);
     }
 
     public function with(): array
