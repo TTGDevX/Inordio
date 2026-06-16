@@ -45,6 +45,9 @@ new class extends Component
                     <x-nav-link :href="route('quotes.index')" :active="request()->routeIs('quotes.*')" wire:navigate>
                         {{ __('Quotes') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')" wire:navigate>
+                        {{ __('Jobs') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -107,6 +110,9 @@ new class extends Component
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('quotes.index')" :active="request()->routeIs('quotes.*')" wire:navigate>
                 {{ __('Quotes') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')" wire:navigate>
+                {{ __('Jobs') }}
             </x-responsive-nav-link>
         </div>
 

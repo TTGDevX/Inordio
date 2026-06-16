@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Job;
 use App\Models\Quote;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -10,12 +11,24 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function mount(string $quoteId): void
     {
-        $this->quote = Quote::with(['customer', 'lines.item'])->findOrFail($quoteId);
+        $this->quote = Quote::with(['customer', 'lines.item', 'job'])->findOrFail($quoteId);
     }
 
     private function reload(): void
     {
-        $this->quote = Quote::with(['customer', 'lines.item'])->findOrFail($this->quote->id);
+        $this->quote = Quote::with(['customer', 'lines.item', 'job'])->findOrFail($this->quote->id);
+    }
+
+    /**
+     * Convert this quote into a scheduled job (idempotent — one job per quote).
+     */
+    public function convertToJob()
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
+
+        $job = $this->quote->job ?: Job::fromQuote($this->quote);
+
+        return $this->redirect(route('jobs.show', $job->id), navigate: true);
     }
 
     public function send(): void
@@ -122,9 +135,23 @@ new #[Layout('layouts.app')] class extends Component {
                     <x-primary-button wire:click="approve" type="button">Mark approved</x-primary-button>
                     <x-danger-button wire:click="decline" type="button">Mark declined</x-danger-button>
                 @else
-                    <p class="text-sm text-gray-500">This quote is {{ $quote->status->label() }} — no further actions.</p>
+                    <p class="text-sm text-gray-500">This quote is {{ $quote->status->label() }}.</p>
                 @endif
             </div>
         @endcan
+
+        @if ($quote->status === \App\Enums\QuoteStatus::Approved)
+            <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6 flex items-center gap-3">
+                @if ($quote->job)
+                    <span class="text-sm text-gray-600">Converted to job</span>
+                    <a href="{{ route('jobs.show', $quote->job->id) }}" wire:navigate
+                       class="text-sm font-mono text-indigo-600 hover:text-indigo-800">{{ $quote->job->number }}</a>
+                @else
+                    @can('manage-jobs')
+                        <x-primary-button wire:click="convertToJob" type="button">Convert to job</x-primary-button>
+                    @endcan
+                @endif
+            </div>
+        @endif
     </div>
 </div>

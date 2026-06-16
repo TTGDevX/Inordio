@@ -44,5 +44,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-locations', $atLeast(UserRole::Office));
         Gate::define('manage-customers', $atLeast(UserRole::Office));
         Gate::define('manage-quotes', $atLeast(UserRole::Office));
+        Gate::define('manage-jobs', $atLeast(UserRole::Office));
+        // Technicians work jobs in the field (start/complete) but don't manage them.
+        Gate::define('work-jobs', $atLeast(UserRole::Technician));
     }
 }

@@ -42,6 +42,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('quotes/create', 'quotes.form')->name('quotes.create');
     Volt::route('quotes/{quoteId}/edit', 'quotes.form')->name('quotes.edit');
     Volt::route('quotes/{quoteId}', 'quotes.show')->name('quotes.show');
+
+    // Jobs. Static "create" before the {jobId} wildcard; param is {jobId}.
+    Volt::route('jobs', 'jobs.index')->name('jobs.index');
+    Volt::route('jobs/create', 'jobs.form')->name('jobs.create');
+    Volt::route('jobs/{jobId}/edit', 'jobs.form')->name('jobs.edit');
+    Volt::route('jobs/{jobId}', 'jobs.show')->name('jobs.show');
 });
 
 require __DIR__.'/auth.php';

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 #[Fillable(['customer_id', 'number', 'status', 'valid_until', 'notes'])]
@@ -48,6 +49,14 @@ class Quote extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(QuoteLineItem::class)->orderBy('position');
+    }
+
+    /**
+     * The job this quote was converted into, if any (one per quote).
+     */
+    public function job(): HasOne
+    {
+        return $this->hasOne(Job::class);
     }
 
     /**
