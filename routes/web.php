@@ -36,6 +36,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // lets the component resolve it under tenancy in mount(). See
     // resources/views/livewire/inventory/show.blade.php.
     Volt::route('inventory/{itemId}', 'inventory.show')->name('inventory.show');
+
+    // Quotes. Static "create" before the {quoteId} wildcard; param is {quoteId}.
+    Volt::route('quotes', 'quotes.index')->name('quotes.index');
+    Volt::route('quotes/create', 'quotes.form')->name('quotes.create');
+    Volt::route('quotes/{quoteId}/edit', 'quotes.form')->name('quotes.edit');
+    Volt::route('quotes/{quoteId}', 'quotes.show')->name('quotes.show');
 });
 
 require __DIR__.'/auth.php';
