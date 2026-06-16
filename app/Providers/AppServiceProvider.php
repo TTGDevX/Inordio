@@ -42,5 +42,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('move-stock', $atLeast(UserRole::Technician));
         Gate::define('manage-inventory', $atLeast(UserRole::Office));
         Gate::define('manage-locations', $atLeast(UserRole::Office));
+        Gate::define('manage-customers', $atLeast(UserRole::Office));
     }
 }

@@ -39,6 +39,9 @@ new class extends Component
                     <x-nav-link :href="route('locations.index')" :active="request()->routeIs('locations.*')" wire:navigate>
                         {{ __('Locations') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('customers.index')" :active="request()->routeIs('customers.*')" wire:navigate>
+                        {{ __('Customers') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -95,6 +98,9 @@ new class extends Component
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('locations.index')" :active="request()->routeIs('locations.*')" wire:navigate>
                 {{ __('Locations') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('customers.index')" :active="request()->routeIs('customers.*')" wire:navigate>
+                {{ __('Customers') }}
             </x-responsive-nav-link>
         </div>
 
