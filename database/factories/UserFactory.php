@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -41,5 +42,38 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * Assign a specific role (stored as the enum's string value).
+     */
+    public function role(UserRole $role): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => $role->value]);
+    }
+
+    public function owner(): static
+    {
+        return $this->role(UserRole::Owner);
+    }
+
+    public function admin(): static
+    {
+        return $this->role(UserRole::Admin);
+    }
+
+    public function office(): static
+    {
+        return $this->role(UserRole::Office);
+    }
+
+    public function technician(): static
+    {
+        return $this->role(UserRole::Technician);
+    }
+
+    public function viewer(): static
+    {
+        return $this->role(UserRole::Viewer);
     }
 }

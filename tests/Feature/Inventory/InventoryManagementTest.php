@@ -33,7 +33,8 @@ class InventoryManagementTest extends TestCase
         $this->tenant = Tenant::create(['name' => 'TTG']);
         tenancy()->initialize($this->tenant);
 
-        $this->user = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        // Admin can manage inventory + locations and move stock.
+        $this->user = User::factory()->admin()->create(['tenant_id' => $this->tenant->id]);
         $this->actingAs($this->user);
     }
 

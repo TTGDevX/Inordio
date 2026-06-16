@@ -26,6 +26,8 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function mount(?string $itemId = null): void
     {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
         if ($itemId !== null) {
             $item = InventoryItem::findOrFail($itemId);
             $this->editingId = $item->id;
@@ -70,6 +72,8 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function save()
     {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
         $data = $this->validate();
 
         // "Add new" text wins over the select when provided.

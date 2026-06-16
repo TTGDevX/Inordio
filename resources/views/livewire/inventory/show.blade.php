@@ -58,6 +58,8 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function applyAction(StockManager $stock): void
     {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('move-stock'), 403);
+
         $this->validate($this->actionRules());
 
         $qty = (float) $this->quantity;
@@ -101,8 +103,10 @@ new #[Layout('layouts.app')] class extends Component {
         <div class="flex items-center justify-between">
             <a href="{{ route('inventory.index') }}" wire:navigate
                class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to inventory</a>
-            <a href="{{ route('inventory.edit', $item->id) }}" wire:navigate
-               class="text-sm text-indigo-600 hover:text-indigo-800">Edit item</a>
+            @can('manage-inventory')
+                <a href="{{ route('inventory.edit', $item->id) }}" wire:navigate
+                   class="text-sm text-indigo-600 hover:text-indigo-800">Edit item</a>
+            @endcan
         </div>
 
         @if ($statusMessage)
@@ -197,6 +201,7 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
 
         {{-- Stock actions --}}
+        @can('move-stock')
         <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
             <h2 class="font-medium text-gray-800">Move stock</h2>
 
@@ -257,5 +262,6 @@ new #[Layout('layouts.app')] class extends Component {
                 <x-primary-button>Record {{ $action }}</x-primary-button>
             </form>
         </div>
+        @endcan
     </div>
 </div>

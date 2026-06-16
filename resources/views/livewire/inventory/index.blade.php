@@ -42,10 +42,12 @@ new #[Layout('layouts.app')] class extends Component {
 
         <div class="flex items-center justify-between gap-3">
             <h1 class="text-xl font-semibold text-gray-800">Inventory</h1>
-            <a href="{{ route('inventory.create') }}" wire:navigate
-               class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-                Add item
-            </a>
+            @can('manage-inventory')
+                <a href="{{ route('inventory.create') }}" wire:navigate
+                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                    Add item
+                </a>
+            @endcan
         </div>
 
         <div class="relative">

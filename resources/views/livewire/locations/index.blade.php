@@ -31,12 +31,16 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function newLocation(): void
     {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-locations'), 403);
+
         $this->resetForm();
         $this->showForm = true;
     }
 
     public function edit(int $id): void
     {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-locations'), 403);
+
         $location = Location::findOrFail($id);
         $this->editingId = $location->id;
         $this->name = $location->name;
@@ -48,6 +52,8 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function save(): void
     {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-locations'), 403);
+
         $data = $this->validate();
 
         // Only trucks carry an assigned technician.
@@ -84,7 +90,9 @@ new #[Layout('layouts.app')] class extends Component {
 
         <div class="flex items-center justify-between">
             <h1 class="text-xl font-semibold text-gray-800">Locations</h1>
-            <x-primary-button wire:click="newLocation" type="button">Add location</x-primary-button>
+            @can('manage-locations')
+                <x-primary-button wire:click="newLocation" type="button">Add location</x-primary-button>
+            @endcan
         </div>
 
         @if ($showForm)
@@ -158,8 +166,10 @@ new #[Layout('layouts.app')] class extends Component {
                                     @endif
                                 </p>
                             </div>
-                            <button wire:click="edit({{ $location->id }})" type="button"
-                                class="text-sm text-indigo-600 hover:text-indigo-800">Edit</button>
+                            @can('manage-locations')
+                                <button wire:click="edit({{ $location->id }})" type="button"
+                                    class="text-sm text-indigo-600 hover:text-indigo-800">Edit</button>
+                            @endcan
                         </li>
                     @endforeach
                 </ul>
