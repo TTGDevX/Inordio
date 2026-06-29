@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+| Dark theme — applied when <html> has the `.dark` class (toggled in the nav).
+| Implemented as plain overrides (not Tailwind dark: variants) so it compiles
+| reliably and stays isolated to this one file.
+*/
+.dark { color-scheme: dark; }
+.dark body { background-color: #0f172a; }
+
+/* Surfaces */
+.dark .bg-gray-100 { background-color: #0f172a !important; } /* page background */
+.dark .bg-gray-50  { background-color: #0f172a !important; } /* table headers   */
+.dark .bg-white    { background-color: #1e293b !important; } /* cards           */
+.dark nav.bg-white { background-color: #020617 !important; } /* top bar = black  */
+
+/* Text */
+.dark .text-gray-900 { color: #f1f5f9 !important; }
+.dark .text-gray-800 { color: #f1f5f9 !important; }
+.dark .text-gray-700 { color: #e2e8f0 !important; }
+.dark .text-gray-600 { color: #cbd5e1 !important; }
+.dark .text-gray-500 { color: #94a3b8 !important; }
+.dark .text-gray-400 { color: #64748b !important; }
+
+/* Borders & dividers */
+.dark .border-gray-100,
+.dark .border-gray-200 { border-color: #334155 !important; }
+.dark .border-gray-300 { border-color: #475569 !important; }
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #334155 !important; }
+
+/* Form controls */
+.dark input,
+.dark select,
+.dark textarea { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #475569 !important; }
+
+/* Hover rows */
+.dark .hover\:bg-gray-50:hover  { background-color: #243049 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #243049 !important; }
+
+/* Theme-toggle icon visibility */
+.theme-icon-sun { display: none; }
+.dark .theme-icon-sun { display: inline; }
+.dark .theme-icon-moon { display: none; }

@@ -7,6 +7,20 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
+        {{-- Apply saved theme before paint (no flash); expose the toggle. --}}
+        <script>
+            (function () {
+                var root = document.documentElement;
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    root.classList.add('dark');
+                }
+                window.__toggleTheme = function () {
+                    root.classList.toggle('dark');
+                    localStorage.theme = root.classList.contains('dark') ? 'dark' : 'light';
+                };
+            })();
+        </script>
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
