@@ -62,12 +62,16 @@ new #[Layout('layouts.app')] class extends Component {
         <div class="flex items-center justify-between">
             <a href="{{ route('quotes.index') }}" wire:navigate
                class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to quotes</a>
-            @can('manage-quotes')
-                @if ($quote->isDraft())
-                    <a href="{{ route('quotes.edit', $quote->id) }}" wire:navigate
-                       class="text-sm text-indigo-600 hover:text-indigo-800">Edit quote</a>
-                @endif
-            @endcan
+            <div class="flex items-center gap-4">
+                <a href="{{ route('quotes.print', $quote->id) }}" target="_blank"
+                   class="text-sm text-indigo-600 hover:text-indigo-800">Print / PDF</a>
+                @can('manage-quotes')
+                    @if ($quote->isDraft())
+                        <a href="{{ route('quotes.edit', $quote->id) }}" wire:navigate
+                           class="text-sm text-indigo-600 hover:text-indigo-800">Edit quote</a>
+                    @endif
+                @endcan
+            </div>
         </div>
 
         @if ($statusMessage)

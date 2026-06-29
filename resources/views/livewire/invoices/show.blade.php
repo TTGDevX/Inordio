@@ -75,8 +75,12 @@ new #[Layout('layouts.app')] class extends Component {
 <div class="py-6 sm:py-12">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
 
-        <a href="{{ route('invoices.index') }}" wire:navigate
-           class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to invoices</a>
+        <div class="flex items-center justify-between">
+            <a href="{{ route('invoices.index') }}" wire:navigate
+               class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to invoices</a>
+            <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank"
+               class="text-sm text-indigo-600 hover:text-indigo-800">Print / PDF</a>
+        </div>
 
         @if ($statusMessage)
             <div class="rounded-md bg-green-50 px-4 py-3 text-sm text-green-800">{{ $statusMessage }}</div>

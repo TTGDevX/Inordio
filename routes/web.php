@@ -41,6 +41,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('quotes', 'quotes.index')->name('quotes.index');
     Volt::route('quotes/create', 'quotes.form')->name('quotes.create');
     Volt::route('quotes/{quoteId}/edit', 'quotes.form')->name('quotes.edit');
+    Route::get('quotes/{quoteId}/print', function (string $quoteId) {
+        $quote = \App\Models\Quote::with(['customer', 'lines.item'])->findOrFail($quoteId);
+
+        return view('print.quote', ['quote' => $quote]);
+    })->name('quotes.print');
     Volt::route('quotes/{quoteId}', 'quotes.show')->name('quotes.show');
 
     // Jobs. Static "create" before the {jobId} wildcard; param is {jobId}.
@@ -52,6 +57,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Invoices (created from jobs; no standalone builder yet).
     Volt::route('invoices', 'invoices.index')->name('invoices.index');
+    Route::get('invoices/{invoiceId}/print', function (string $invoiceId) {
+        $invoice = \App\Models\Invoice::with(['customer', 'job', 'lines.item', 'payments'])->findOrFail($invoiceId);
+
+        return view('print.invoice', ['invoice' => $invoice]);
+    })->name('invoices.print');
     Volt::route('invoices/{invoiceId}', 'invoices.show')->name('invoices.show');
 });
 
