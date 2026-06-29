@@ -1,8 +1,13 @@
 <?php
 
 use App\Enums\JobStatus;
+use App\Enums\PickListStatus;
+use App\Exceptions\InsufficientStockException;
+use App\Models\Invoice;
 use App\Models\Job;
+use App\Models\PickList;
 use App\Models\User;
+use App\Services\StockManager;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
@@ -11,15 +16,38 @@ new #[Layout('layouts.app')] class extends Component {
     public ?int $assignUserId = null;
     public string $statusMessage = '';
 
+    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoice', 'pickList.items.item', 'pickList.destination'];
+
     public function mount(string $jobId): void
     {
-        $this->job = Job::with(['customer', 'quote', 'assignedUser', 'lines.item'])->findOrFail($jobId);
+        $this->job = Job::with(self::EAGER)->findOrFail($jobId);
         $this->assignUserId = $this->job->assigned_user_id;
     }
 
     private function reload(): void
     {
-        $this->job = Job::with(['customer', 'quote', 'assignedUser', 'lines.item'])->findOrFail($this->job->id);
+        $this->job = Job::with(self::EAGER)->findOrFail($this->job->id);
+    }
+
+    public function generatePickList()
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
+
+        $pickList = $this->job->pickList ?: PickList::generateFrom($this->job);
+
+        return $this->redirect(route('picklists.show', $pickList->id), navigate: true);
+    }
+
+    /**
+     * Raise an invoice from this job (idempotent — one invoice per job).
+     */
+    public function createInvoice()
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-invoices'), 403);
+
+        $invoice = $this->job->invoice ?: Invoice::fromJob($this->job);
+
+        return $this->redirect(route('invoices.show', $invoice->id), navigate: true);
     }
 
     public function start(): void
@@ -30,10 +58,27 @@ new #[Layout('layouts.app')] class extends Component {
         $this->statusMessage = 'Job started.';
     }
 
-    public function complete(): void
+    public function complete(StockManager $stock): void
     {
         abort_unless(\Illuminate\Support\Facades\Gate::allows('work-jobs'), 403);
+
         $this->job->complete();
+
+        // If parts were picked to a truck, consume them off that truck now so
+        // stock reflects what was actually used on the job (brief §5).
+        $pickList = $this->job->pickList;
+        if ($pickList && $pickList->status === PickListStatus::Completed && $pickList->destination) {
+            foreach ($pickList->items as $item) {
+                if ($item->picked && $item->item) {
+                    try {
+                        $stock->consume($item->item, $pickList->destination, (float) $item->quantity, auth()->user(), 'Used on '.$this->job->number);
+                    } catch (InsufficientStockException) {
+                        // Truck doesn't hold enough (manual adjustment elsewhere) — skip.
+                    }
+                }
+            }
+        }
+
         $this->reload();
         $this->statusMessage = 'Job completed.';
     }
@@ -157,6 +202,40 @@ new #[Layout('layouts.app')] class extends Component {
                 @can('manage-jobs')
                     <x-danger-button wire:click="cancel" type="button">Cancel job</x-danger-button>
                 @endcan
+            </div>
+        @endif
+
+        {{-- Pick list: pull parts from the warehouse to the truck --}}
+        @php($catalogueLines = $job->lines->whereNotNull('inventory_item_id'))
+        @if ($job->pickList || $catalogueLines->isNotEmpty())
+            <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6 flex items-center gap-3">
+                <span class="font-medium text-gray-800">Pick list</span>
+                @if ($job->pickList)
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $job->pickList->status->badgeClasses() }}">
+                        {{ $job->pickList->status->label() }}
+                    </span>
+                    <a href="{{ route('picklists.show', $job->pickList->id) }}" wire:navigate
+                       class="text-sm text-indigo-600 hover:text-indigo-800">Open</a>
+                @else
+                    @can('manage-jobs')
+                        <x-secondary-button wire:click="generatePickList" type="button">Generate pick list</x-secondary-button>
+                    @endcan
+                @endif
+            </div>
+        @endif
+
+        {{-- Invoicing --}}
+        @if ($job->status === JobStatus::Done || $job->invoice)
+            <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6 flex items-center gap-3">
+                @if ($job->invoice)
+                    <span class="text-sm text-gray-600">Invoiced</span>
+                    <a href="{{ route('invoices.show', $job->invoice->id) }}" wire:navigate
+                       class="text-sm font-mono text-indigo-600 hover:text-indigo-800">{{ $job->invoice->number }}</a>
+                @else
+                    @can('manage-invoices')
+                        <x-primary-button wire:click="createInvoice" type="button">Create invoice</x-primary-button>
+                    @endcan
+                @endif
             </div>
         @endif
 

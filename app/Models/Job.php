@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 #[Fillable(['customer_id', 'quote_id', 'assigned_user_id', 'number', 'title', 'status', 'scheduled_at', 'notes'])]
@@ -59,6 +60,22 @@ class Job extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(JobLineItem::class)->orderBy('position');
+    }
+
+    /**
+     * The invoice raised from this job, if any (one per job for now).
+     */
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * The pick list generated for this job, if any (one per job).
+     */
+    public function pickList(): HasOne
+    {
+        return $this->hasOne(PickList::class);
     }
 
     public function subtotal(): float

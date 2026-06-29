@@ -5,7 +5,7 @@ use Livewire\Volt\Volt;
 
 Route::view('/', 'welcome');
 
-Route::view('dashboard', 'dashboard')
+Volt::route('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
@@ -48,6 +48,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('jobs/create', 'jobs.form')->name('jobs.create');
     Volt::route('jobs/{jobId}/edit', 'jobs.form')->name('jobs.edit');
     Volt::route('jobs/{jobId}', 'jobs.show')->name('jobs.show');
+    Volt::route('pick-lists/{pickListId}', 'picklists.show')->name('picklists.show');
+
+    // Invoices (created from jobs; no standalone builder yet).
+    Volt::route('invoices', 'invoices.index')->name('invoices.index');
+    Volt::route('invoices/{invoiceId}', 'invoices.show')->name('invoices.show');
 });
 
 require __DIR__.'/auth.php';
