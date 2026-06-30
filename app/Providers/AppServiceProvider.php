@@ -52,5 +52,6 @@ class AppServiceProvider extends ServiceProvider
         // Company-wide configuration (identity, branding) is an admin concern.
         Gate::define('manage-settings', $atLeast(UserRole::Admin));
         Gate::define('view-reports', $atLeast(UserRole::Office));
+        Gate::define('manage-purchasing', $atLeast(UserRole::Office));
     }
 }

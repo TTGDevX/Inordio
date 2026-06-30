@@ -20,6 +20,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Reports
     Volt::route('reports', 'reports.index')->name('reports.index');
 
+    // Purchase orders. Static "create" before {poId}.
+    Volt::route('purchase-orders', 'purchasing.index')->name('purchasing.index');
+    Volt::route('purchase-orders/create', 'purchasing.form')->name('purchasing.create');
+    Volt::route('purchase-orders/{poId}/edit', 'purchasing.form')->name('purchasing.edit');
+    Volt::route('purchase-orders/{poId}', 'purchasing.show')->name('purchasing.show');
+
     // CSV exports (accountant / Sage handoff). Tenant-scoped by the middleware.
     Route::get('exports/customers.csv', function () {
         abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-customers'), 403);

@@ -39,6 +39,11 @@ new class extends Component
                     <x-nav-link :href="route('locations.index')" :active="request()->routeIs('locations.*')" wire:navigate>
                         {{ __('Locations') }}
                     </x-nav-link>
+                    @can('manage-purchasing')
+                        <x-nav-link :href="route('purchasing.index')" :active="request()->routeIs('purchasing.*')" wire:navigate>
+                            {{ __('Purchasing') }}
+                        </x-nav-link>
+                    @endcan
                     <x-nav-link :href="route('customers.index')" :active="request()->routeIs('customers.*')" wire:navigate>
                         {{ __('Customers') }}
                     </x-nav-link>
@@ -128,6 +133,11 @@ new class extends Component
             <x-responsive-nav-link :href="route('locations.index')" :active="request()->routeIs('locations.*')" wire:navigate>
                 {{ __('Locations') }}
             </x-responsive-nav-link>
+            @can('manage-purchasing')
+                <x-responsive-nav-link :href="route('purchasing.index')" :active="request()->routeIs('purchasing.*')" wire:navigate>
+                    {{ __('Purchasing') }}
+                </x-responsive-nav-link>
+            @endcan
             <x-responsive-nav-link :href="route('customers.index')" :active="request()->routeIs('customers.*')" wire:navigate>
                 {{ __('Customers') }}
             </x-responsive-nav-link>
