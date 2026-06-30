@@ -43,6 +43,10 @@ new #[Layout('layouts.app')] class extends Component {
         <div class="flex items-center justify-between gap-3">
             <h1 class="text-xl font-semibold text-gray-800">Inventory</h1>
             @can('manage-inventory')
+                <a href="{{ route('exports.inventory') }}"
+                   class="me-2 inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                    Export CSV
+                </a>
                 <a href="{{ route('inventory.create') }}" wire:navigate
                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
                     Add item

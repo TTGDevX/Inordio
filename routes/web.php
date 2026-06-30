@@ -20,6 +20,39 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Reports
     Volt::route('reports', 'reports.index')->name('reports.index');
 
+    // CSV exports (accountant / Sage handoff). Tenant-scoped by the middleware.
+    Route::get('exports/customers.csv', function () {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-customers'), 403);
+
+        $rows = \App\Models\Customer::orderBy('name')->get();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Name', 'Contact', 'Email', 'Phone', 'City', 'Province', 'Postal', 'Tax exempt']);
+            foreach ($rows as $c) {
+                fputcsv($out, [$c->name, $c->contact_name, $c->email, $c->phone, $c->city, $c->province?->value, $c->postal_code, $c->tax_exempt ? 'Yes' : 'No']);
+            }
+            fclose($out);
+        }, 'customers.csv', ['Content-Type' => 'text/csv']);
+    })->name('exports.customers');
+
+    Route::get('exports/inventory.csv', function () {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $rows = \App\Models\InventoryItem::with('category')
+            ->withSum('stockLevels as total_quantity', 'quantity')
+            ->orderBy('name')->get();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Name', 'Internal SKU', 'Vendor SKU', 'Category', 'Cost', 'Price', 'Unit', 'On hand']);
+            foreach ($rows as $i) {
+                fputcsv($out, [$i->name, $i->internal_sku, $i->vendor_sku, $i->category?->name, $i->cost, $i->price, $i->unit_of_measure, (float) ($i->total_quantity ?? 0)]);
+            }
+            fclose($out);
+        }, 'inventory.csv', ['Content-Type' => 'text/csv']);
+    })->name('exports.inventory');
+
     // Locations
     Volt::route('locations', 'locations.index')->name('locations.index');
 
