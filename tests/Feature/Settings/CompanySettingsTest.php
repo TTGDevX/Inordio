@@ -57,6 +57,7 @@ class CompanySettingsTest extends TestCase
 
         Volt::test('settings.company')
             ->set('legal_name', 'TTG Inc')
+            ->set('website', 'https://ttg.test')
             ->set('tax_number', '12345 RT0001')
             ->set('accent_color', '#0ea5e9')
             ->set('logo', UploadedFile::fake()->image('logo.png'))

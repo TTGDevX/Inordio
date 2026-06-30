@@ -8,7 +8,7 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 #[Fillable([
     'legal_name', 'address_line1', 'address_line2', 'city', 'province', 'postal_code',
-    'phone', 'email', 'tax_number', 'payment_terms', 'invoice_footer', 'accent_color', 'logo_path',
+    'phone', 'email', 'website', 'tax_number', 'payment_terms', 'invoice_footer', 'accent_color', 'logo_path',
 ])]
 class CompanySetting extends Model
 {

@@ -11,6 +11,7 @@
             trim(($co->city ?? '').' '.($co->province ?? '').' '.($co->postal_code ?? '')),
             $co->phone,
             $co->email,
+            $co->website,
         ]);
     @endphp
     <div class="flex items-start justify-between border-b border-gray-200 pb-6">

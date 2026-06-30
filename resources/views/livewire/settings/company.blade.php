@@ -17,6 +17,7 @@ new #[Layout('layouts.app')] class extends Component {
     public string $postal_code = '';
     public string $phone = '';
     public string $email = '';
+    public string $website = '';
     public string $tax_number = '';
     public string $payment_terms = '';
     public string $invoice_footer = '';
@@ -39,6 +40,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->postal_code = (string) $s->postal_code;
         $this->phone = (string) $s->phone;
         $this->email = (string) $s->email;
+        $this->website = (string) $s->website;
         $this->tax_number = (string) $s->tax_number;
         $this->payment_terms = (string) $s->payment_terms;
         $this->invoice_footer = (string) $s->invoice_footer;
@@ -57,6 +59,7 @@ new #[Layout('layouts.app')] class extends Component {
             'postal_code' => ['nullable', 'string', 'max:10'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
+            'website' => ['nullable', 'string', 'max:255'],
             'tax_number' => ['nullable', 'string', 'max:255'],
             'payment_terms' => ['nullable', 'string', 'max:255'],
             'invoice_footer' => ['nullable', 'string', 'max:1000'],
@@ -162,6 +165,12 @@ new #[Layout('layouts.app')] class extends Component {
                     <x-text-input id="email" wire:model="email" type="email" class="block mt-1 w-full" />
                     <x-input-error :messages="$errors->get('email')" class="mt-2" />
                 </div>
+            </div>
+
+            <div>
+                <x-input-label for="website" value="Website" />
+                <x-text-input id="website" wire:model="website" class="block mt-1 w-full" placeholder="https://…" />
+                <x-input-error :messages="$errors->get('website')" class="mt-2" />
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
