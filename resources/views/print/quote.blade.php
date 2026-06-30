@@ -3,8 +3,16 @@
 @section('title', 'Quote '.$quote->number)
 
 @section('content')
-    @php($co = \App\Models\CompanySetting::current())
-    @php($coAddr = array_filter([$co->address_line1, $co->address_line2, trim(($co->city ?? '').' '.($co->province ?? '').' '.($co->postal_code ?? '')), $co->phone, $co->email]))
+    @php
+        $co = \App\Models\CompanySetting::current();
+        $coAddr = array_filter([
+            $co->address_line1,
+            $co->address_line2,
+            trim(($co->city ?? '').' '.($co->province ?? '').' '.($co->postal_code ?? '')),
+            $co->phone,
+            $co->email,
+        ]);
+    @endphp
     <div class="flex items-start justify-between border-b border-gray-200 pb-6">
         <div>
             @if ($co->logo_path)
