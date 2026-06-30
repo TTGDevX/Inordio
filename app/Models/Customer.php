@@ -38,4 +38,9 @@ class Customer extends Model
             'is_active' => 'boolean',
         ];
     }
+
+    public function invoices(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
 }

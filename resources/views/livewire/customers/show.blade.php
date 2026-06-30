@@ -24,8 +24,12 @@ new #[Layout('layouts.app')] class extends Component {
             <a href="{{ route('customers.index') }}" wire:navigate
                class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to customers</a>
             @can('manage-customers')
-                <a href="{{ route('customers.edit', $customer->id) }}" wire:navigate
-                   class="text-sm text-indigo-600 hover:text-indigo-800">Edit customer</a>
+                <div class="flex items-center gap-4">
+                    <a href="{{ route('customers.statement', $customer->id) }}" target="_blank"
+                       class="text-sm text-indigo-600 hover:text-indigo-800">Statement</a>
+                    <a href="{{ route('customers.edit', $customer->id) }}" wire:navigate
+                       class="text-sm text-indigo-600 hover:text-indigo-800">Edit customer</a>
+                </div>
             @endcan
         </div>
 

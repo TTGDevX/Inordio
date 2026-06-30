@@ -67,6 +67,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('customers', 'customers.index')->name('customers.index');
     Volt::route('customers/create', 'customers.form')->name('customers.create');
     Volt::route('customers/{customerId}/edit', 'customers.form')->name('customers.edit');
+    Route::get('customers/{customerId}/statement', function (string $customerId) {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-customers'), 403);
+
+        $customer = \App\Models\Customer::findOrFail($customerId);
+        $invoices = $customer->invoices()
+            ->where('status', '!=', 'void')
+            ->with(['lines', 'payments'])
+            ->orderBy('issued_at')->get();
+
+        return view('print.statement', compact('customer', 'invoices'));
+    })->name('customers.statement');
     Volt::route('customers/{customerId}', 'customers.show')->name('customers.show');
 
     // Inventory items. Static segments (create) must be registered before the
