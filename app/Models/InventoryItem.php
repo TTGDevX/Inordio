@@ -33,6 +33,7 @@ class InventoryItem extends Model
     {
         return [
             'cost' => 'decimal:2',
+            'average_cost' => 'decimal:2',
             'price' => 'decimal:2',
             'is_serialized' => 'boolean',
         ];

@@ -17,6 +17,8 @@ new #[Layout('layouts.app')] class extends Component {
     public ?int $to_location_id = null;
     public string $quantity = '';
     public string $note = '';
+    public ?int $receiveSupplierId = null;
+    public string $receiveUnitCost = '';
     public string $statusMessage = '';
 
     // Supplier-offering form state.
@@ -135,7 +137,9 @@ new #[Layout('layouts.app')] class extends Component {
 
         try {
             match ($this->action) {
-                'receive' => $stock->receive($this->item, Location::findOrFail($this->to_location_id), $qty, $user, $note),
+                'receive' => $stock->receive($this->item, Location::findOrFail($this->to_location_id), $qty, $user, $note,
+                    $this->receiveSupplierId ? Supplier::find($this->receiveSupplierId) : null,
+                    $this->receiveUnitCost !== '' ? (float) $this->receiveUnitCost : null),
                 'transfer' => $stock->transfer($this->item, Location::findOrFail($this->from_location_id), Location::findOrFail($this->to_location_id), $qty, $user, $note),
                 'consume' => $stock->consume($this->item, Location::findOrFail($this->from_location_id), $qty, $user, $note),
             };
@@ -149,7 +153,7 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
 
-        $this->reset(['quantity', 'note', 'from_location_id', 'to_location_id']);
+        $this->reset(['quantity', 'note', 'from_location_id', 'to_location_id', 'receiveSupplierId', 'receiveUnitCost']);
         $this->item->load('stockLevels.location');
         $this->statusMessage = ucfirst($this->action).' recorded.';
     }
@@ -204,8 +208,12 @@ new #[Layout('layouts.app')] class extends Component {
                     <dd class="font-mono text-gray-900">{{ $item->vendor_sku ?? '—' }}</dd>
                 </div>
                 <div>
-                    <dt class="text-gray-500">Cost</dt>
+                    <dt class="text-gray-500">Cost (replacement)</dt>
                     <dd class="text-gray-900">${{ number_format((float) $item->cost, 2) }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Avg cost (on hand)</dt>
+                    <dd class="text-gray-900">${{ number_format((float) $item->average_cost, 2) }}</dd>
                 </div>
                 <div>
                     <dt class="text-gray-500">Price</dt>
@@ -381,6 +389,25 @@ new #[Layout('layouts.app')] class extends Component {
                         </div>
                     @endif
                 </div>
+
+                @if ($action === 'receive')
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <x-input-label for="receiveSupplierId" value="Supplier (optional)" />
+                            <select id="receiveSupplierId" wire:model="receiveSupplierId"
+                                class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">—</option>
+                                @foreach ($suppliers as $supplier)
+                                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="receiveUnitCost" value="Unit cost (optional)" />
+                            <x-text-input id="receiveUnitCost" wire:model="receiveUnitCost" type="number" step="0.01" min="0" class="block mt-1 w-full" placeholder="defaults to item cost" />
+                        </div>
+                    </div>
+                @endif
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

@@ -8,7 +8,9 @@ use App\Models\InventoryItem;
 use App\Models\Location;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
+use App\Models\Supplier;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -24,14 +26,25 @@ class StockManager
     /**
      * Inventory arriving from a supplier into a location (e.g. PO receipt).
      */
-    public function receive(InventoryItem $item, Location $to, float $quantity, ?User $user = null, ?string $note = null): StockMovement
+    public function receive(InventoryItem $item, Location $to, float $quantity, ?User $user = null, ?string $note = null, ?Supplier $supplier = null, ?float $unitCost = null): StockMovement
     {
         $this->assertPositive($quantity);
 
-        return DB::transaction(function () use ($item, $to, $quantity, $user, $note) {
+        return DB::transaction(function () use ($item, $to, $quantity, $user, $note, $supplier, $unitCost) {
+            // Cost of this receipt (defaults to the item's replacement cost).
+            $cost = $unitCost ?? (float) $item->cost;
+
+            // Roll the weighted-average cost across all on-hand BEFORE adding.
+            $priorQty = (float) $item->stockLevels()->sum('quantity');
             $this->addToLocation($item, $to, $quantity);
 
-            return $this->record($item, StockMovementType::Receipt, $quantity, null, $to, $user, $note);
+            $newQty = $priorQty + $quantity;
+            if ($newQty > 0) {
+                $item->average_cost = Money::round((($priorQty * (float) $item->average_cost) + ($quantity * $cost)) / $newQty);
+                $item->save();
+            }
+
+            return $this->record($item, StockMovementType::Receipt, $quantity, null, $to, $user, $note, $supplier, $cost);
         });
     }
 
@@ -122,12 +135,14 @@ class StockManager
         );
     }
 
-    private function record(InventoryItem $item, StockMovementType $type, float $quantity, ?Location $from, ?Location $to, ?User $user, ?string $note): StockMovement
+    private function record(InventoryItem $item, StockMovementType $type, float $quantity, ?Location $from, ?Location $to, ?User $user, ?string $note, ?Supplier $supplier = null, ?float $unitCost = null): StockMovement
     {
         return StockMovement::create([
             'inventory_item_id' => $item->id,
             'from_location_id' => $from?->id,
             'to_location_id' => $to?->id,
+            'supplier_id' => $supplier?->id,
+            'unit_cost' => $unitCost,
             'type' => $type,
             'quantity' => $quantity,
             'user_id' => $user?->id,

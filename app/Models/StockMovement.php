@@ -14,6 +14,8 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
     'inventory_item_id',
     'from_location_id',
     'to_location_id',
+    'supplier_id',
+    'unit_cost',
     'type',
     'quantity',
     'user_id',
@@ -29,6 +31,7 @@ class StockMovement extends Model
         return [
             'type' => StockMovementType::class,
             'quantity' => 'decimal:2',
+            'unit_cost' => 'decimal:2',
         ];
     }
 
