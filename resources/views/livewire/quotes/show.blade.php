@@ -54,6 +54,22 @@ new #[Layout('layouts.app')] class extends Component {
         $this->reload();
         $this->statusMessage = 'Quote declined.';
     }
+
+    public function emailToCustomer(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-quotes'), 403);
+
+        if (! $this->quote->customer->email) {
+            $this->addError('email', 'This customer has no email address on file.');
+
+            return;
+        }
+
+        \Illuminate\Support\Facades\Mail::to($this->quote->customer->email)
+            ->send(new \App\Mail\QuoteMail($this->quote, \App\Models\CompanySetting::current()));
+
+        $this->statusMessage = 'Quote emailed to '.$this->quote->customer->email;
+    }
 }; ?>
 
 <div class="py-6 sm:py-12">
@@ -65,6 +81,10 @@ new #[Layout('layouts.app')] class extends Component {
             <div class="flex items-center gap-4">
                 <a href="{{ route('quotes.print', $quote->id) }}" target="_blank"
                    class="text-sm text-indigo-600 hover:text-indigo-800">Print / PDF</a>
+                @can('manage-quotes')
+                    <button wire:click="emailToCustomer" type="button"
+                        class="text-sm text-indigo-600 hover:text-indigo-800">Email to customer</button>
+                @endcan
                 @can('manage-quotes')
                     @if ($quote->isDraft())
                         <a href="{{ route('quotes.edit', $quote->id) }}" wire:navigate

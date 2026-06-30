@@ -43,6 +43,22 @@ new #[Layout('layouts.app')] class extends Component {
         $this->statusMessage = 'Invoice voided.';
     }
 
+    public function emailToCustomer(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-invoices'), 403);
+
+        if (! $this->invoice->customer->email) {
+            $this->addError('email', 'This customer has no email address on file.');
+
+            return;
+        }
+
+        \Illuminate\Support\Facades\Mail::to($this->invoice->customer->email)
+            ->send(new \App\Mail\InvoiceMail($this->invoice, \App\Models\CompanySetting::current()));
+
+        $this->statusMessage = 'Invoice emailed to '.$this->invoice->customer->email;
+    }
+
     public function recordPayment(): void
     {
         abort_unless(\Illuminate\Support\Facades\Gate::allows('record-payments'), 403);
@@ -78,9 +94,16 @@ new #[Layout('layouts.app')] class extends Component {
         <div class="flex items-center justify-between">
             <a href="{{ route('invoices.index') }}" wire:navigate
                class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to invoices</a>
-            <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank"
-               class="text-sm text-indigo-600 hover:text-indigo-800">Print / PDF</a>
+            <div class="flex items-center gap-4">
+                <a href="{{ route('invoices.print', $invoice->id) }}" target="_blank"
+                   class="text-sm text-indigo-600 hover:text-indigo-800">Print / PDF</a>
+                @can('manage-invoices')
+                    <button wire:click="emailToCustomer" type="button"
+                        class="text-sm text-indigo-600 hover:text-indigo-800">Email to customer</button>
+                @endcan
+            </div>
         </div>
+        @error('email')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
 
         @if ($statusMessage)
             <div class="rounded-md bg-green-50 px-4 py-3 text-sm text-green-800">{{ $statusMessage }}</div>
