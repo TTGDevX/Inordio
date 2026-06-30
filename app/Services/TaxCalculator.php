@@ -24,20 +24,17 @@ class TaxCalculator
         $components = config('taxes.rates.'.$province->value, []);
 
         $lines = [];
-        $total = 0.0;
 
         foreach ($components as $component) {
             $rate = (float) $component['rate'];
-            $taxAmount = round($amount * $rate / 100, 2);
-            $total = round($total + $taxAmount, 2);
 
             $lines[] = [
                 'label' => $component['label'].' ('.rtrim(rtrim(number_format($rate, 3), '0'), '.').'%)',
                 'rate' => $rate,
-                'amount' => $taxAmount,
+                'amount' => \App\Support\Money::round($amount * $rate / 100),
             ];
         }
 
-        return ['lines' => $lines, 'total' => $total];
+        return ['lines' => $lines, 'total' => \App\Support\Money::sum(array_column($lines, 'amount'))];
     }
 }

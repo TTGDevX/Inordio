@@ -3,10 +3,21 @@
 @section('title', 'Invoice '.$invoice->number)
 
 @section('content')
+    @php($co = \App\Models\CompanySetting::current())
+    @php($coAddr = array_filter([$co->address_line1, $co->address_line2, trim(($co->city ?? '').' '.($co->province ?? '').' '.($co->postal_code ?? '')), $co->phone, $co->email]))
     <div class="flex items-start justify-between border-b border-gray-200 pb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">{{ tenant('name') ?? config('app.name') }}</h1>
-            <p class="text-sm text-gray-500">Invoice</p>
+            @if ($co->logo_path)
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($co->logo_path) }}" alt="logo" class="h-12 w-auto mb-2">
+            @endif
+            <h1 class="text-2xl font-bold text-gray-900">{{ $co->legal_name ?: (tenant('name') ?? config('app.name')) }}</h1>
+            @foreach ($coAddr as $cl)
+                <p class="text-xs text-gray-500">{{ $cl }}</p>
+            @endforeach
+            @if ($co->tax_number)
+                <p class="text-xs text-gray-500">GST/HST: {{ $co->tax_number }}</p>
+            @endif
+            <p class="text-sm font-semibold mt-1" @if ($co->accent_color) style="color: {{ $co->accent_color }}" @endif>Invoice</p>
         </div>
         <div class="text-right text-sm">
             <p class="text-lg font-semibold font-mono text-gray-900">{{ $invoice->number }}</p>
@@ -98,6 +109,10 @@
             <p class="text-gray-500">Notes</p>
             <p class="text-gray-700 whitespace-pre-line">{{ $invoice->notes }}</p>
         </div>
+    @endif
+
+    @if ($co->invoice_footer)
+        <div class="mt-8 border-t border-gray-200 pt-4 text-sm text-gray-600 whitespace-pre-line">{{ $co->invoice_footer }}</div>
     @endif
 
     <p class="mt-10 text-center text-xs text-gray-400">Thank you for your business.</p>

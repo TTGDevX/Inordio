@@ -35,6 +35,6 @@ class InvoiceLineItem extends Model
 
     public function lineTotal(): float
     {
-        return (float) $this->quantity * (float) $this->unit_price;
+        return \App\Support\Money::round((float) $this->quantity * (float) $this->unit_price);
     }
 }

@@ -65,7 +65,7 @@ class Quote extends Model
      */
     public function subtotal(): float
     {
-        return (float) $this->lines->sum(fn (QuoteLineItem $line) => $line->lineTotal());
+        return \App\Support\Money::sum($this->lines->map(fn (QuoteLineItem $line) => $line->lineTotal()));
     }
 
     public function isDraft(): bool

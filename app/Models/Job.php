@@ -81,7 +81,7 @@ class Job extends Model
 
     public function subtotal(): float
     {
-        return (float) $this->lines->sum(fn (JobLineItem $line) => $line->lineTotal());
+        return \App\Support\Money::sum($this->lines->map(fn (JobLineItem $line) => $line->lineTotal()));
     }
 
     /**

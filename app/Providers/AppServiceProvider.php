@@ -49,5 +49,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('work-jobs', $atLeast(UserRole::Technician));
         Gate::define('manage-invoices', $atLeast(UserRole::Office));
         Gate::define('record-payments', $atLeast(UserRole::Office));
+        // Company-wide configuration (identity, branding) is an admin concern.
+        Gate::define('manage-settings', $atLeast(UserRole::Admin));
     }
 }

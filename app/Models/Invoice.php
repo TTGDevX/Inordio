@@ -72,22 +72,22 @@ class Invoice extends Model
 
     public function subtotal(): float
     {
-        return (float) $this->lines->sum(fn (InvoiceLineItem $line) => $line->lineTotal());
+        return \App\Support\Money::sum($this->lines->map(fn (InvoiceLineItem $line) => $line->lineTotal()));
     }
 
     public function total(): float
     {
-        return round($this->subtotal() + (float) $this->tax_total, 2);
+        return \App\Support\Money::sum([$this->subtotal(), (float) $this->tax_total]);
     }
 
     public function amountPaid(): float
     {
-        return (float) $this->payments()->sum('amount');
+        return \App\Support\Money::round($this->payments()->sum('amount'));
     }
 
     public function balance(): float
     {
-        return round($this->total() - $this->amountPaid(), 2);
+        return \App\Support\Money::round($this->total() - $this->amountPaid());
     }
 
     /**
