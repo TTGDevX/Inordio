@@ -7,16 +7,21 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        {{-- Apply saved theme before paint (no flash); expose the toggle. --}}
+        {{-- Apply saved theme on load AND after each wire:navigate (which swaps
+             <html> and would otherwise drop the .dark class). --}}
         <script>
             (function () {
                 var root = document.documentElement;
-                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    root.classList.add('dark');
+                function apply() {
+                    var dark = localStorage.theme === 'dark'
+                        || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    root.classList.toggle('dark', dark);
                 }
+                apply();
+                document.addEventListener('livewire:navigated', apply);
                 window.__toggleTheme = function () {
-                    root.classList.toggle('dark');
-                    localStorage.theme = root.classList.contains('dark') ? 'dark' : 'light';
+                    localStorage.theme = root.classList.contains('dark') ? 'light' : 'dark';
+                    apply();
                 };
             })();
         </script>
