@@ -3,6 +3,7 @@
 use App\Exceptions\InsufficientStockException;
 use App\Models\InventoryItem;
 use App\Models\Location;
+use App\Models\Supplier;
 use App\Services\StockManager;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -18,6 +19,11 @@ new #[Layout('layouts.app')] class extends Component {
     public string $note = '';
     public string $statusMessage = '';
 
+    // Supplier-offering form state.
+    public ?int $offerSupplierId = null;
+    public string $offerVendorSku = '';
+    public string $offerCost = '';
+
     /**
      * Resolve the item here rather than via implicit route-model binding.
      * By the time the component mounts, the IdentifyTenant middleware has
@@ -29,8 +35,69 @@ new #[Layout('layouts.app')] class extends Component {
      */
     public function mount(string $itemId): void
     {
-        $this->item = InventoryItem::with(['category', 'supplier', 'stockLevels.location'])
+        $this->item = InventoryItem::with(['category', 'supplier', 'stockLevels.location', 'supplierOfferings.supplier'])
             ->findOrFail($itemId);
+    }
+
+    private function reloadItem(): void
+    {
+        $this->item = InventoryItem::with(['category', 'supplier', 'stockLevels.location', 'supplierOfferings.supplier'])
+            ->findOrFail($this->item->id);
+    }
+
+    public function addOffering(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $this->validate([
+            'offerSupplierId' => ['required', 'integer', 'exists:suppliers,id'],
+            'offerVendorSku' => ['nullable', 'string', 'max:255'],
+            'offerCost' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $isFirst = $this->item->supplierOfferings()->count() === 0;
+
+        $this->item->supplierOfferings()->updateOrCreate(
+            ['supplier_id' => $this->offerSupplierId],
+            ['vendor_sku' => $this->offerVendorSku ?: null, 'cost' => $this->offerCost, 'is_preferred' => $isFirst],
+        );
+
+        $this->item->applyPreferredCost();
+        $this->reset(['offerSupplierId', 'offerVendorSku', 'offerCost']);
+        $this->reloadItem();
+        $this->statusMessage = 'Supplier saved.';
+    }
+
+    public function setPreferredOffering(int $offeringId): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $this->item->supplierOfferings()->update(['is_preferred' => false]);
+        $this->item->supplierOfferings()->whereKey($offeringId)->update(['is_preferred' => true]);
+        $this->item->applyPreferredCost();
+        $this->reloadItem();
+        $this->statusMessage = 'Preferred supplier updated.';
+    }
+
+    public function removeOffering(int $offeringId): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $offering = $this->item->supplierOfferings()->find($offeringId);
+        if (! $offering) {
+            return;
+        }
+
+        $wasPreferred = $offering->is_preferred;
+        $offering->delete();
+
+        if ($wasPreferred && ($next = $this->item->supplierOfferings()->orderBy('id')->first())) {
+            $next->update(['is_preferred' => true]);
+        }
+
+        $this->item->applyPreferredCost();
+        $this->reloadItem();
+        $this->statusMessage = 'Supplier removed.';
     }
 
     protected function actionRules(): array
@@ -93,6 +160,7 @@ new #[Layout('layouts.app')] class extends Component {
             'levels' => $this->item->stockLevels->sortBy(fn ($l) => $l->location->name),
             'total' => (float) $this->item->stockLevels->sum('quantity'),
             'locations' => Location::where('is_active', true)->orderBy('name')->get(),
+            'suppliers' => Supplier::orderBy('name')->get(),
         ];
     }
 }; ?>
@@ -161,6 +229,74 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
             </dl>
         </div>
+
+        {{-- Suppliers & pricing (one item, many wholesalers). Cost follows the preferred. --}}
+        @can('manage-inventory')
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="px-5 py-3 border-b border-gray-100">
+                    <h2 class="font-medium text-gray-800">Suppliers &amp; pricing</h2>
+                </div>
+
+                @if ($item->supplierOfferings->isEmpty())
+                    <p class="px-5 py-4 text-sm text-gray-500">No suppliers linked yet. Add one below.</p>
+                @else
+                    <ul class="divide-y divide-gray-100">
+                        @foreach ($item->supplierOfferings->sortByDesc('is_preferred') as $offering)
+                            <li wire:key="offer-{{ $offering->id }}" class="flex items-center justify-between px-5 py-3">
+                                <div>
+                                    <p class="text-gray-900">
+                                        {{ $offering->supplier?->name ?? '—' }}
+                                        @if ($offering->is_preferred)
+                                            <span class="ms-1 inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Preferred</span>
+                                        @endif
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        ${{ number_format((float) $offering->cost, 2) }}
+                                        @if ($offering->vendor_sku) · {{ $offering->vendor_sku }} @endif
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-3 text-sm">
+                                    @unless ($offering->is_preferred)
+                                        <button type="button" wire:click="setPreferredOffering({{ $offering->id }})"
+                                            class="text-indigo-600 hover:text-indigo-800">Make preferred</button>
+                                    @endunless
+                                    <button type="button" wire:click="removeOffering({{ $offering->id }})"
+                                        class="text-gray-400 hover:text-red-600">Remove</button>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                <div class="border-t border-gray-100 px-5 py-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                        <div>
+                            <x-input-label for="offerSupplierId" value="Supplier" />
+                            <select id="offerSupplierId" wire:model="offerSupplierId"
+                                class="block mt-1 w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">— Select —</option>
+                                @foreach ($suppliers as $supplier)
+                                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('offerSupplierId')" class="mt-1" />
+                        </div>
+                        <div>
+                            <x-input-label for="offerVendorSku" value="Vendor SKU" />
+                            <x-text-input id="offerVendorSku" wire:model="offerVendorSku" class="block mt-1 w-full text-sm font-mono" />
+                        </div>
+                        <div>
+                            <x-input-label for="offerCost" value="Cost" />
+                            <x-text-input id="offerCost" wire:model="offerCost" type="number" step="0.01" min="0" class="block mt-1 w-full text-sm" />
+                            <x-input-error :messages="$errors->get('offerCost')" class="mt-1" />
+                        </div>
+                        <div>
+                            <x-primary-button wire:click="addOffering" type="button">Add supplier</x-primary-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endcan
 
         <div class="bg-white rounded-lg shadow-sm overflow-hidden">
             <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">

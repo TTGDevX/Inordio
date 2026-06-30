@@ -64,6 +64,28 @@ class InventoryItem extends Model
     }
 
     /**
+     * Wholesaler offerings (each with its own cost + vendor SKU).
+     */
+    public function supplierOfferings(): HasMany
+    {
+        return $this->hasMany(ItemSupplier::class);
+    }
+
+    /**
+     * Set the item's cost from its preferred supplier offering (falling back to
+     * the first). Keeps valuation/margin/pricing in sync with the chosen source.
+     */
+    public function applyPreferredCost(): void
+    {
+        $preferred = $this->supplierOfferings()->where('is_preferred', true)->first()
+            ?? $this->supplierOfferings()->orderBy('id')->first();
+
+        if ($preferred) {
+            $this->update(['cost' => $preferred->cost]);
+        }
+    }
+
+    /**
      * Total on-hand quantity across every location for this tenant.
      */
     public function totalQuantity(): float
