@@ -146,6 +146,31 @@ Sources: Retail Council of Canada (NS→14%), canada.ca GST/HST rate page. **Re-
 
 > ✅ **Dark theme BUILT** (June 2026): a single isolated CSS layer in `resources/css/app.css` (overrides under `.dark`), toggled by a nav button + no-flash script in the layouts. NOT Tailwind `dark:` variants (those mis-compiled here due to a v3/v4 mismatch). Lesson: do theming on a branch, verify by screenshot, never bulk find-replace blade files.
 
+### Company profile, branding & document templates (requested June 2026)
+
+These three are tightly related and should be done together, in this order:
+
+1. **Company/tenant profile + settings.** A settings screen where each tenant configures its own business identity: legal name, address, phone, email, **GST/HST registration number** (required on Canadian tax invoices), default payment terms, and an invoice footer/terms blurb. Store on the tenant (the `data` column already exists) or a dedicated `company_settings` table keyed by `tenant_id`. This is the foundation the print documents read from (today they only show `tenant('name')`).
+2. **Logo upload.** Per-tenant logo stored via Laravel filesystem (local now, S3-compatible later per brief §2). Show it on the print/PDF header and the nav. Watch tenant isolation on the storage path (prefix by `tenant_id`).
+3. **PDF/document templating.** Settings-driven branding for the print views: logo, an accent colour, the footer/terms text, and toggles for which fields show. A full drag-and-drop template editor is out of scope; a clean "branding pulled from company settings" pass gets 90% of the value. (If a true server-side PDF is wanted, add DomPDF here.)
+
+### Benchmark: gaps vs Invoice Ninja (verify with a fresh search next session)
+
+Invoice Ninja was deliberately *not* forked (brief §3) — it's a yardstick for invoicing completeness. Things it has that Inordio doesn't yet, ranked by relevance to a Canadian field-service shop:
+
+- **Online payment collection** — pay an invoice by card/e-transfer via a link (Stripe/Square/Rotessa/Interac, brief §7). We only record payments manually. *High value.*
+- **Client portal** — customers log in to view/approve quotes and pay invoices. (Roadmap item below.) *High.*
+- **Email delivery + automated reminders** — send the invoice and nudge overdue ones automatically. *High.*
+- **Recurring invoices / subscriptions** — ties into the brief's **Service Agreements**. *Medium-high.*
+- **Credit notes & refunds** — we track partial payments via balance but have no credit/refund concept. *Medium.*
+- **Customer statements** — an account summary across invoices/payments. *Medium.*
+- **Configurable invoice numbering** — prefixes/sequences per tenant (we use a global `INV-#####`). *Low-medium.*
+- **Attachments on invoices**, multi-currency, multi-language. *Low for now (single-currency CAD, English).*
+
+We already match or exceed IN on: true inventory + stock movements, the pick-list/truck flow, jobs/scheduling, role-based access, and Canadian provincial tax snapshotting — none of which IN does for trades.
+
+### Remaining roadmap (build-ready)
+
 1. **Camera QR/barcode scanning UI** — layer a phone-camera scanner onto the pick-list page (and receiving). Pure front-end on top of the working domain.
 2. **Reports / dashboard:** open quotes, scheduled jobs this week, unpaid invoices (aging), low-stock alerts (`StockLevel::isLow()` already exists). All data is present.
 4. **Phase 6 — Expenses + receipt OCR.** Blocked on an open question: AI gateway endpoint/protocol/auth (brief §8/§9). Route all AI through one `AiGateway` service class — no provider SDKs in app code.

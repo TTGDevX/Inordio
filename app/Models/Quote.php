@@ -17,6 +17,7 @@ class Quote extends Model
 {
     /** @use HasFactory<QuoteFactory> */
     use BelongsToTenant, HasFactory;
+    use \App\Models\Concerns\Auditable;
 
     protected function casts(): array
     {

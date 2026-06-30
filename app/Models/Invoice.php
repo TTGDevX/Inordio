@@ -22,6 +22,7 @@ class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
     use BelongsToTenant, HasFactory;
+    use \App\Models\Concerns\Auditable;
 
     protected function casts(): array
     {

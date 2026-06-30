@@ -1,0 +1,93 @@
+# Inordio — Whole-Project Review vs. Original Brief (June 2026)
+
+A step-back comparison of what's built against **PROJECT-BRIEF.md**, plus practicalities to borrow from Invoice Ninja and things not in the brief that I think we should add. Written as a planning input — no code changes here.
+
+---
+
+## 1. The core promise — are we delivering it?
+
+Brief §1: a field-service platform whose differentiator is **real inventory** (actual quantities per location: warehouse + trucks), built for trades, Canadian-first, without the $500/mo price tag.
+
+**Verdict: the heart is built and solid.** True multi-location inventory, a stock-movement ledger, the warehouse→truck→job pick/consume flow, Canadian provincial tax snapshotting, and the full quote→job→invoice→payment spine all work and are tested (126 tests). That's the differentiated core competitors (Jobber/Housecall/Invoice Ninja) don't do for trades. Good place to be.
+
+The gaps are mostly **breadth** (features around the core) and **polish/practicality** (delivering documents, getting paid, looking professional), not the core itself.
+
+---
+
+## 2. Feature-map scorecard (brief §4 CORE)
+
+| Feature | Status | Notes |
+|---|---|---|
+| Multi-tenant + Auth | ✅ | |
+| Inventory + Locations | ✅ | |
+| Truck Stock + Transfers | ✅ | via StockManager + pick list |
+| **Purchase Orders** | ❌ | receiving is manual (`StockManager::receive`); no PO/receipt entity. Legacy map had Supplier→PO→POLineItem/POReceipt. |
+| Customers | ✅ | |
+| Quotes + Approvals | ✅ | |
+| **Service Agreements** | ❌ | recurring/contract visits — not started (≈ recurring invoices). |
+| Jobs + Scheduling | 🟡 | jobs + a scheduled date exist; **no calendar/dispatch board**. |
+| **Equipment Tracking (serialized/nested)** | 🟡 | schema is built (self-referencing assets, location inheritance, events) but **no UI** to view/nest/assemble/scan. The "LEGO model" is data-only. |
+| **Checklists / Inspections** | ❌ | not started. |
+| Invoicing + Payments | 🟡 | full invoicing + **manual** payments; no online collection. |
+| **Expense / Receipt Scanning** | ❌ | Phase 6; needs the AI gateway. |
+| **Sage Integration** | ❌ | Phase 8. |
+| User Roles + Permissions | ✅ | RBAC across all modules. |
+| Reports + Dashboards | 🟡 | ops dashboard done; **no reports** (AR aging, stock valuation, etc.). |
+| **Discord Integration** | ❌ | Phase 7. |
+
+Added beyond the brief this build: ops dashboard, **printable PDF quotes/invoices**, dark theme.
+
+---
+
+## 3. Inventory-spec gaps (brief §5 — the differentiator's fine print)
+
+The engine is built, but several spec'd pieces are missing and they're what make the differentiator *feel* complete:
+
+- **QR label generation** ❌ — brief wants Inordio to *generate* QR labels for items, bins, trucks, serialized assets, and pick lists. Not built.
+- **Camera barcode/QR scanning** ❌ — scan-to-pick, scan-to-receive, auto-deduct. Not built (top of build-ready roadmap).
+- **Serialized-asset UI** ❌ — tree view, scan-to-explore (walk up/down), record assemble/disassemble. Only the data layer exists.
+- **Item photos** ❌ — `photo_path` column exists but there's **no upload UI**.
+- **Back-order tracking / short-pick flagging** ❌ — pick list doesn't handle "item unavailable."
+- **Movement history UI** ❌ — `stock_movements` is recorded but never surfaced to the user.
+- **Low-stock alerts** 🟡 — dashboard shows low-stock count/list; no real notifications, and minimums are per-location (brief said per-item — confirm which you want).
+
+---
+
+## 4. Practicalities to borrow from Invoice Ninja (your ask)
+
+You specifically want IN-style templating of the documents and emails. Concretely:
+
+- **Email delivery + templates** ❌ — we have **no email sending at all** yet. IN sends quotes/invoices/receipts and lets you template the subject/body. This is the biggest "give out info" gap after PDFs. Needs SMTP config.
+- **Automated reminders** ❌ — IN auto-nudges overdue invoices on a schedule. We'd need a scheduled job + reminder templates.
+- **Document/PDF templates** ❌ — branding (logo, colours, footer/terms) pulled from company settings. (Already on the roadmap with the company-profile work.)
+- **Recurring invoices / auto-billing** ❌ — = the brief's Service Agreements.
+- **Client portal + pay-by-link** ❌ — customers view/approve/pay online.
+- **Customer statements, credit notes, configurable numbering** ❌ — standard IN invoicing niceties.
+
+**Suggested sequence for the IN-style block:** company profile + logo → branded PDF templates → email sending (with templates) for quotes/invoices → automated overdue reminders → online payment links → client portal. Each builds on the last.
+
+---
+
+## 5. Things NOT in the brief that I think we should add
+
+1. **Audit log** (high) — who changed/voided what, when (esp. invoices, payments, stock). The legacy notes had `AuditLog`; for a multi-tenant financial system it's important for trust and disputes. Low effort with a model observer.
+2. **Money as integer cents** (high, do before real $ flows) — totals are stored as decimals and computed with floats; we already saw float rounding in the QST test. Standard practice is integer cents (or a money cast) to avoid penny drift on invoices. Worth fixing while the data is still small.
+3. **Soft deletes / no hard-delete of financial records** (medium) — invoices/payments/jobs should archive, not vanish. We have `void` for invoices; extend the pattern and add soft deletes.
+4. **Job photos & notes** (medium) — legacy map had `JobPhoto`/`JobNote`; techs documenting work with photos is a real trades need and a nice differentiator vs. plain invoicing tools.
+5. **Deposits / progress billing** (medium) — trades often take a deposit up front; invoices may need partial/deposit billing, not just one final invoice.
+6. **In-app + email notifications** (medium) — low stock, overdue invoice, job assigned-to-me.
+7. **Configurable per-tenant invoice/quote numbering** (low-med) — prefixes/sequences instead of a global `INV-#####`.
+8. **CSV export** (low-med) — accountant/Sage handoff before the full Sage integration lands.
+
+---
+
+## 6. Recommended order when work resumes
+
+1. **Company profile + logo + branded PDF templates** (build-ready, unblocks looking professional).
+2. **Email sending + templates** for quotes/invoices (the real "give out info" completion). *Needs SMTP.*
+3. **Money-as-cents refactor + audit log** (do before pushing real invoicing volume — cheaper now than later).
+4. **Camera scanning + QR labels + serialized-asset UI** (completes the inventory differentiator).
+5. **Online payments → automated reminders → client portal** (the IN-style getting-paid loop). *Needs gateway accounts.*
+6. Then the remaining brief phases: expenses/OCR, Discord, Sage, reports; and production hardening (TLS/subdomains/backups/egg) before any external customer.
+
+**Decisions needed from Scott:** AI gateway details (endpoint/protocol/auth), payment gateway + SMTP accounts, per-item vs per-location stock minimums, and whether to do the money-as-cents refactor (recommended yes).

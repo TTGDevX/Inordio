@@ -17,6 +17,7 @@ class Job extends Model
 {
     /** @use HasFactory<JobFactory> */
     use BelongsToTenant, HasFactory;
+    use \App\Models\Concerns\Auditable;
 
     // The queue uses the reserved "jobs" table; the domain model lives elsewhere.
     protected $table = 'service_jobs';

@@ -15,6 +15,7 @@ class Payment extends Model
 {
     /** @use HasFactory<PaymentFactory> */
     use BelongsToTenant, HasFactory;
+    use \App\Models\Concerns\Auditable;
 
     protected function casts(): array
     {
