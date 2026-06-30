@@ -51,6 +51,11 @@ new class extends Component
                     <x-nav-link :href="route('invoices.index')" :active="request()->routeIs('invoices.*')" wire:navigate>
                         {{ __('Invoices') }}
                     </x-nav-link>
+                    @can('view-reports')
+                        <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')" wire:navigate>
+                            {{ __('Reports') }}
+                        </x-nav-link>
+                    @endcan
                 </div>
             </div>
 
@@ -135,6 +140,11 @@ new class extends Component
             <x-responsive-nav-link :href="route('invoices.index')" :active="request()->routeIs('invoices.*')" wire:navigate>
                 {{ __('Invoices') }}
             </x-responsive-nav-link>
+            @can('view-reports')
+                <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')" wire:navigate>
+                    {{ __('Reports') }}
+                </x-responsive-nav-link>
+            @endcan
         </div>
 
         <!-- Responsive Settings Options -->

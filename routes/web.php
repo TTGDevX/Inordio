@@ -17,6 +17,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Company settings (branding / identity)
     Volt::route('settings/company', 'settings.company')->name('settings.company');
 
+    // Reports
+    Volt::route('reports', 'reports.index')->name('reports.index');
+
     // Locations
     Volt::route('locations', 'locations.index')->name('locations.index');
 
