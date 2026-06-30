@@ -14,6 +14,7 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
     'inventory_item_id',
     'from_location_id',
     'to_location_id',
+    'job_id',
     'supplier_id',
     'unit_cost',
     'type',

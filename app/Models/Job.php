@@ -85,6 +85,27 @@ class Job extends Model
     }
 
     /**
+     * Cost of parts consumed on this job (valued at average cost when used).
+     */
+    public function costOfGoods(): float
+    {
+        return \App\Support\Money::sum(
+            StockMovement::where('job_id', $this->id)
+                ->where('type', \App\Enums\StockMovementType::Usage)
+                ->get()
+                ->map(fn (StockMovement $m) => \App\Support\Money::round((float) $m->quantity * (float) $m->unit_cost))
+        );
+    }
+
+    /**
+     * Gross margin: job revenue (pre-tax) minus cost of goods used.
+     */
+    public function margin(): float
+    {
+        return \App\Support\Money::round($this->subtotal() - $this->costOfGoods());
+    }
+
+    /**
      * Build a scheduled job from an approved (or any) quote, copying its lines.
      */
     public static function fromQuote(Quote $quote): self

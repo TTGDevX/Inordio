@@ -7,6 +7,7 @@ use App\Exceptions\InsufficientStockException;
 use App\Models\InventoryItem;
 use App\Models\Location;
 use App\Models\StockLevel;
+use App\Models\Job;
 use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
@@ -71,14 +72,15 @@ class StockManager
     /**
      * Consume stock at a location (used on a job, deducted from the truck).
      */
-    public function consume(InventoryItem $item, Location $from, float $quantity, ?User $user = null, ?string $note = null): StockMovement
+    public function consume(InventoryItem $item, Location $from, float $quantity, ?User $user = null, ?string $note = null, ?Job $job = null): StockMovement
     {
         $this->assertPositive($quantity);
 
-        return DB::transaction(function () use ($item, $from, $quantity, $user, $note) {
+        return DB::transaction(function () use ($item, $from, $quantity, $user, $note, $job) {
             $this->removeFromLocation($item, $from, $quantity);
 
-            return $this->record($item, StockMovementType::Usage, $quantity, $from, null, $user, $note);
+            // Value the consumption at the item's current average cost (COGS).
+            return $this->record($item, StockMovementType::Usage, $quantity, $from, null, $user, $note, null, (float) $item->average_cost, $job);
         });
     }
 
@@ -135,12 +137,13 @@ class StockManager
         );
     }
 
-    private function record(InventoryItem $item, StockMovementType $type, float $quantity, ?Location $from, ?Location $to, ?User $user, ?string $note, ?Supplier $supplier = null, ?float $unitCost = null): StockMovement
+    private function record(InventoryItem $item, StockMovementType $type, float $quantity, ?Location $from, ?Location $to, ?User $user, ?string $note, ?Supplier $supplier = null, ?float $unitCost = null, ?Job $job = null): StockMovement
     {
         return StockMovement::create([
             'inventory_item_id' => $item->id,
             'from_location_id' => $from?->id,
             'to_location_id' => $to?->id,
+            'job_id' => $job?->id,
             'supplier_id' => $supplier?->id,
             'unit_cost' => $unitCost,
             'type' => $type,

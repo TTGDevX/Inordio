@@ -71,7 +71,7 @@ new #[Layout('layouts.app')] class extends Component {
             foreach ($pickList->items as $item) {
                 if ($item->picked && $item->item) {
                     try {
-                        $stock->consume($item->item, $pickList->destination, (float) $item->quantity, auth()->user(), 'Used on '.$this->job->number);
+                        $stock->consume($item->item, $pickList->destination, (float) $item->quantity, auth()->user(), 'Used on '.$this->job->number, $this->job);
                     } catch (InsufficientStockException) {
                         // Truck doesn't hold enough (manual adjustment elsewhere) — skip.
                     }
@@ -154,6 +154,16 @@ new #[Layout('layouts.app')] class extends Component {
                     <dt class="text-gray-500">Total (pre-tax)</dt>
                     <dd class="text-gray-900 tabular-nums">${{ number_format($job->subtotal(), 2) }}</dd>
                 </div>
+                @can('manage-jobs')
+                    <div>
+                        <dt class="text-gray-500">Parts cost</dt>
+                        <dd class="text-gray-900 tabular-nums">${{ number_format($job->costOfGoods(), 2) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500">Margin</dt>
+                        <dd class="tabular-nums font-medium {{ $job->margin() >= 0 ? 'text-green-700' : 'text-red-600' }}">${{ number_format($job->margin(), 2) }}</dd>
+                    </div>
+                @endcan
             </dl>
 
             @if ($job->lines->isNotEmpty())

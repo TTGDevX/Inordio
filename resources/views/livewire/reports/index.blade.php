@@ -39,7 +39,7 @@ new #[Layout('layouts.app')] class extends Component {
 
         // --- Inventory valuation (quantity on hand × cost / price) ---
         $levels = StockLevel::with('item')->get();
-        $costValue = Money::sum($levels->map(fn (StockLevel $l) => Money::round((float) $l->quantity * (float) ($l->item->cost ?? 0))));
+        $costValue = Money::sum($levels->map(fn (StockLevel $l) => Money::round((float) $l->quantity * ((float) $l->item->average_cost > 0 ? (float) $l->item->average_cost : (float) $l->item->cost))));
         $retailValue = Money::sum($levels->map(fn (StockLevel $l) => Money::round((float) $l->quantity * (float) ($l->item->price ?? 0))));
 
         return [
