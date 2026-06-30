@@ -51,6 +51,10 @@ All models use the `BelongsToTenant` trait (stancl/tenancy) and carry a `tenant_
 - `Invoice` (auto-numbered `INV-00001`, **tax snapshotted at issue time**: `province`, `tax_breakdown` JSON, `tax_total` frozen on the row; `total()/amountPaid()/balance()`; `fromJob()`), `InvoiceLineItem`, `Payment` (`recordPayment()` auto-flips status to Paid when balance clears). Enums: `InvoiceStatus`, `PaymentMethod` (cash/cheque/e-transfer/card/other).
 - UI: `invoices/index`, `invoices/show` (tax breakdown, payments list, record-payment form, mark-sent, void).
 
+### Field documentation (post-MVP slices)
+- **Customer statements**: `print/statement.blade.php` + `customers/{customerId}/statement` route (gated `manage-customers`), branded letterhead, table of invoices with balance owing. "Statement" link on the customer page.
+- **Job photos**: `job_photos` table + `JobPhoto` model (`BelongsToTenant`, `url()`), `Job::photos()`. `jobs/show` uses `WithFileUploads` — techs (`work-jobs`) attach a captured/uploaded photo with optional caption (stored at `job-photos/{tenant}` on the public disk); office (`manage-jobs`) can remove. Mobile-friendly `capture="environment"` file input. Needs `php artisan storage:link` once (already done for the logo).
+
 ---
 
 ## 3. Roles & permissions (Gates)

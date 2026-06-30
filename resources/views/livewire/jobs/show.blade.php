@@ -7,16 +7,25 @@ use App\Models\Invoice;
 use App\Models\Job;
 use App\Models\PickList;
 use App\Models\User;
+use App\Models\JobPhoto;
 use App\Services\StockManager;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
 
 new #[Layout('layouts.app')] class extends Component {
+    use WithFileUploads;
+
     public Job $job;
     public ?int $assignUserId = null;
     public string $statusMessage = '';
 
-    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoice', 'pickList.items.item', 'pickList.destination'];
+    #[Validate('nullable|image|max:8192')]
+    public $photo = null;
+    public string $caption = '';
+
+    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoice', 'pickList.items.item', 'pickList.destination', 'photos.uploader'];
 
     public function mount(string $jobId): void
     {
@@ -89,6 +98,45 @@ new #[Layout('layouts.app')] class extends Component {
         $this->job->cancel();
         $this->reload();
         $this->statusMessage = 'Job cancelled.';
+    }
+
+    /**
+     * Attach a field photo. Techs document their work (work-jobs).
+     * Stored under a tenant-prefixed path on the public disk.
+     */
+    public function addPhoto(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('work-jobs'), 403);
+        $this->validate();
+
+        if (! $this->photo) {
+            return;
+        }
+
+        $path = $this->photo->store('job-photos/'.tenant('id'), 'public');
+
+        $this->job->photos()->create([
+            'uploaded_by' => auth()->id(),
+            'path' => $path,
+            'caption' => $this->caption ?: null,
+        ]);
+
+        $this->reset('photo', 'caption');
+        $this->reload();
+        $this->statusMessage = 'Photo added.';
+    }
+
+    public function removePhoto(int $photoId): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
+
+        $photo = $this->job->photos()->whereKey($photoId)->first();
+        if ($photo) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($photo->path);
+            $photo->delete();
+            $this->reload();
+            $this->statusMessage = 'Photo removed.';
+        }
     }
 
     public function assign(): void
@@ -197,6 +245,51 @@ new #[Layout('layouts.app')] class extends Component {
                     <p class="text-gray-900 whitespace-pre-line">{{ $job->notes }}</p>
                 </div>
             @endif
+        </div>
+
+        {{-- Field photos: techs document the work (before/after, what they found) --}}
+        <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
+            <h2 class="font-medium text-gray-800">Photos</h2>
+
+            @if ($job->photos->isNotEmpty())
+                <div class="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    @foreach ($job->photos as $photo)
+                        <div class="group relative" wire:key="photo-{{ $photo->id }}">
+                            <a href="{{ $photo->url() }}" target="_blank" class="block">
+                                <img src="{{ $photo->url() }}" alt="{{ $photo->caption }}"
+                                     class="h-32 w-full rounded-md object-cover border border-gray-100">
+                            </a>
+                            @if ($photo->caption)
+                                <p class="mt-1 text-xs text-gray-600 truncate">{{ $photo->caption }}</p>
+                            @endif
+                            <p class="text-[11px] text-gray-400">{{ $photo->uploader?->name }} · {{ $photo->created_at->format('M j') }}</p>
+                            @can('manage-jobs')
+                                <button type="button" wire:click="removePhoto({{ $photo->id }})"
+                                    wire:confirm="Remove this photo?"
+                                    class="absolute top-1 right-1 hidden group-hover:block rounded bg-white/90 px-1.5 py-0.5 text-xs text-red-600 shadow">Remove</button>
+                            @endcan
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="mt-2 text-sm text-gray-500">No photos yet.</p>
+            @endif
+
+            @can('work-jobs')
+                <div class="mt-4 border-t border-gray-100 pt-4 space-y-3">
+                    <div>
+                        <input type="file" wire:model="photo" accept="image/*" capture="environment"
+                            class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-indigo-700 hover:file:bg-indigo-100">
+                        @error('photo') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        <div wire:loading wire:target="photo" class="mt-1 text-xs text-gray-500">Uploading…</div>
+                    </div>
+                    <div class="flex flex-wrap items-end gap-3">
+                        <input type="text" wire:model="caption" placeholder="Caption (optional)"
+                            class="block w-64 rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <x-secondary-button wire:click="addPhoto" type="button" wire:loading.attr="disabled" wire:target="photo,addPhoto">Add photo</x-secondary-button>
+                    </div>
+                </div>
+            @endcan
         </div>
 
         {{-- Status actions: techs work the job; office cancels. --}}

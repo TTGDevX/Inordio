@@ -79,6 +79,14 @@ class Job extends Model
         return $this->hasOne(PickList::class);
     }
 
+    /**
+     * Field photos documenting the work (newest first).
+     */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(JobPhoto::class)->latest();
+    }
+
     public function subtotal(): float
     {
         return \App\Support\Money::sum($this->lines->map(fn (JobLineItem $line) => $line->lineTotal()));
