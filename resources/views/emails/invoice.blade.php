@@ -4,7 +4,14 @@
     </h2>
 
     <p>Hi {{ $invoice->customer->contact_name ?: $invoice->customer->name }},</p>
-    <p>Please find your invoice <strong>{{ $invoice->number }}</strong> summarized below.</p>
+
+    @if (! empty($reminder))
+        <p style="background:#fef2f2; color:#991b1b; padding:10px 12px; border-radius:6px; font-size:14px;">
+            This is a friendly reminder that invoice <strong>{{ $invoice->number }}</strong> is past due. The outstanding balance is shown below.
+        </p>
+    @else
+        <p>Please find your invoice <strong>{{ $invoice->number }}</strong> summarized below.</p>
+    @endif
 
     <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
         <tr>

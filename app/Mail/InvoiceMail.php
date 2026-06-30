@@ -14,13 +14,15 @@ class InvoiceMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Invoice $invoice, public CompanySetting $company) {}
+    public function __construct(public Invoice $invoice, public CompanySetting $company, public bool $reminder = false) {}
 
     public function envelope(): Envelope
     {
         $from = $this->company->legal_name ?: (tenant('name') ?? config('app.name'));
 
-        return new Envelope(subject: 'Invoice '.$this->invoice->number.' from '.$from);
+        return new Envelope(subject: $this->reminder
+            ? 'Payment reminder: Invoice '.$this->invoice->number
+            : 'Invoice '.$this->invoice->number.' from '.$from);
     }
 
     public function content(): Content
@@ -28,6 +30,7 @@ class InvoiceMail extends Mailable
         return new Content(view: 'emails.invoice', with: [
             'invoice' => $this->invoice,
             'co' => $this->company,
+            'reminder' => $this->reminder,
         ]);
     }
 }

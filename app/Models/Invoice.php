@@ -36,6 +36,7 @@ class Invoice extends Model
             'due_at' => 'date',
             'sent_at' => 'datetime',
             'paid_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 
