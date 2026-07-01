@@ -1,6 +1,6 @@
 # Inordio — Build Progress & Resume Guide
 
-> **Purpose:** This is the single source of truth for *where the build is* and *how to pick it back up cold*. Read this together with `PROJECT-BRIEF.md` (scope/architecture) and `CLAUDE.md` (rules). Last updated June 2026.
+> **Purpose:** This is the single source of truth for *where the build is* and *how to pick it back up cold*. Read this together with `PROJECT-BRIEF.md` (scope/architecture) and `CLAUDE.md` (rules). Last updated **June 30, 2026 (month-end checkpoint)**.
 
 ---
 
@@ -15,9 +15,22 @@ The full MVP spine from the brief is built and tested: **multi-tenant → invent
 | 2 | Customers (province + tax fields) | ✅ committed |
 | 3 | Quotes + approvals | ✅ committed |
 | 4 | Jobs + scheduling + quote→job | ✅ committed |
-| 5 | Invoicing + payments + tax engine | ⏳ built; verify + commit (see §6) |
+| 5 | Invoicing + payments + tax engine | ✅ committed |
 
-Test suite: ~116 tests, all green at last run (Phase 5 pending its run). Tests use **in-memory SQLite**, so they need no MySQL.
+Test suite: **203 tests green** (543 assertions) at last run. Tests use **in-memory SQLite**, so they need no MySQL.
+
+### Month-end checkpoint — June 30, 2026
+
+The MVP spine (Phases 0–5) shipped, and a wave of post-MVP slices landed on top of it. Everything below is built, tested, and pushed to `main`:
+
+- **Foundations for real money & trust:** money-as-integer-cents (`Money` helper), rounding-safe tax math, weighted-average costing (`StockManager` + `average_cost`), audit log (`Auditable` trait) **and** an Admin-only audit viewer.
+- **Getting documents out:** branded print/PDF quotes & invoices, company profile + logo, email sending (quote/invoice mailables) + scheduled overdue reminders, **customer statements**, **custom per-tenant document numbering** (editable prefix + counter).
+- **Inventory differentiator completed:** supplier offerings + preferred cost, CSV exports, **stock-movement log** (global + per-item), **item photos**, **low-stock reorder view** (grouped by preferred supplier), and the **serialized-asset "LEGO" UI** (nested tree, assemble/disassemble/move/retire with event history).
+- **Field & ops:** job photos, job notes thread, **jobs schedule/dispatch board** (by date + technician filter), archive/restore for customers & items, purchase orders + receiving, ops dashboard now linking into all the above.
+
+Brief scorecard rows flipped to ✅ since the original review: **Equipment tracking (serialized/nested)** and **Jobs + Scheduling**. See `REVIEW-AND-GAPS.md`.
+
+**Still open (next priorities):** camera barcode/QR scanning + QR label generation (needs a screenshot loop to tune UX); online payments + client portal (needs gateway accounts); expense/receipt OCR (needs AI-gateway details); service agreements / recurring invoices + deposits; checklists/inspections; Sage + Discord integrations; production hardening (subdomains/TLS/backups).
 
 ---
 
