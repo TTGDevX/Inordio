@@ -15,6 +15,17 @@ class CompanySetting extends Model
 {
     use BelongsToTenant;
 
+    /**
+     * In-memory defaults so a freshly firstOrCreate()'d row carries the real
+     * prefixes/counters (DB-level defaults aren't reflected on the new instance).
+     */
+    protected $attributes = [
+        'invoice_prefix' => 'INV-',
+        'invoice_next_number' => 1,
+        'quote_prefix' => 'Q-',
+        'quote_next_number' => 1,
+    ];
+
     protected function casts(): array
     {
         return [

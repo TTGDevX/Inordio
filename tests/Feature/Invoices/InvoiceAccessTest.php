@@ -31,8 +31,8 @@ class InvoiceAccessTest extends TestCase
         $this->tenantA = Tenant::create(['name' => 'Tenant A']);
         $this->tenantB = Tenant::create(['name' => 'Tenant B']);
 
-        $this->invoiceA = $this->asTenant($this->tenantA, fn () => $this->makeInvoice());
-        $this->invoiceB = $this->asTenant($this->tenantB, fn () => $this->makeInvoice());
+        $this->invoiceA = $this->asTenant($this->tenantA, fn () => $this->makeInvoice('Customer A'));
+        $this->invoiceB = $this->asTenant($this->tenantB, fn () => $this->makeInvoice('Customer B'));
 
         tenancy()->end();
     }
@@ -44,9 +44,9 @@ class InvoiceAccessTest extends TestCase
         parent::tearDown();
     }
 
-    private function makeInvoice(): Invoice
+    private function makeInvoice(string $customerName = 'Acme'): Invoice
     {
-        $customer = Customer::factory()->create(['province' => 'ON']);
+        $customer = Customer::factory()->create(['name' => $customerName, 'province' => 'ON']);
         $job = Job::factory()->create(['customer_id' => $customer->id]);
         JobLineItem::factory()->create(['job_id' => $job->id, 'quantity' => 1, 'unit_price' => 100, 'position' => 0]);
 
@@ -71,11 +71,13 @@ class InvoiceAccessTest extends TestCase
 
     public function test_index_lists_only_the_current_tenants_invoices(): void
     {
+        // Both tenants' first invoice is legitimately INV-00001 (per-tenant
+        // counter), so discriminate by the tenant-scoped customer name.
         $this->actingAs($this->userWith(UserRole::Office))
             ->get(route('invoices.index'))
             ->assertOk()
-            ->assertSee($this->invoiceA->number)
-            ->assertDontSee($this->invoiceB->number);
+            ->assertSee('Customer A')
+            ->assertDontSee('Customer B');
     }
 
     public function test_user_cannot_view_an_invoice_from_another_tenant(): void

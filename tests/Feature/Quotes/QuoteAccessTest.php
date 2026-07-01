@@ -69,11 +69,13 @@ class QuoteAccessTest extends TestCase
 
     public function test_index_lists_only_the_current_tenants_quotes(): void
     {
+        // Both tenants' first quote is legitimately Q-00001 (per-tenant counter),
+        // so discriminate by the tenant-scoped customer instead of the number.
         $this->actingAs($this->userWith(UserRole::Office))
             ->get(route('quotes.index'))
             ->assertOk()
-            ->assertSee($this->quoteA->number)
-            ->assertDontSee($this->quoteB->number);
+            ->assertSee('Customer A')
+            ->assertDontSee('Customer B');
     }
 
     public function test_user_cannot_view_a_quote_from_another_tenant(): void
