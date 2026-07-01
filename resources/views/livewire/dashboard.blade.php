@@ -42,7 +42,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <p class="text-sm text-gray-500">Quotes awaiting approval</p>
                 <p class="mt-1 text-3xl font-semibold text-gray-900 tabular-nums">{{ $quotesAwaiting }}</p>
             </a>
-            <a href="{{ route('jobs.index') }}" wire:navigate class="block bg-white rounded-lg shadow-sm p-5 hover:shadow">
+            <a href="{{ route('jobs.schedule') }}" wire:navigate class="block bg-white rounded-lg shadow-sm p-5 hover:shadow">
                 <p class="text-sm text-gray-500">Jobs scheduled</p>
                 <p class="mt-1 text-3xl font-semibold text-gray-900 tabular-nums">{{ $scheduledCount }}</p>
             </a>
@@ -51,16 +51,20 @@ new #[Layout('layouts.app')] class extends Component {
                 <p class="mt-1 text-3xl font-semibold text-gray-900 tabular-nums">${{ number_format($outstanding, 2) }}</p>
                 <p class="text-xs text-gray-400">{{ $outstandingCount }} unpaid {{ $outstandingCount === 1 ? 'invoice' : 'invoices' }}</p>
             </a>
-            <a href="{{ route('inventory.index') }}" wire:navigate class="block bg-white rounded-lg shadow-sm p-5 hover:shadow">
+            <a href="{{ route('inventory.reorder') }}" wire:navigate class="block bg-white rounded-lg shadow-sm p-5 hover:shadow">
                 <p class="text-sm text-gray-500">Low stock</p>
                 <p class="mt-1 text-3xl font-semibold {{ $lowStock->isNotEmpty() ? 'text-red-600' : 'text-gray-900' }} tabular-nums">{{ $lowStock->count() }}</p>
+                @if ($lowStock->isNotEmpty())
+                    <p class="text-xs text-red-500">needs reorder</p>
+                @endif
             </a>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-lg shadow-sm">
-                <div class="px-5 py-3 border-b border-gray-100">
+                <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                     <h2 class="font-medium text-gray-800">Upcoming jobs</h2>
+                    <a href="{{ route('jobs.schedule') }}" wire:navigate class="text-xs text-indigo-600 hover:text-indigo-800">Schedule</a>
                 </div>
                 @if ($upcomingJobs->isEmpty())
                     <p class="px-5 py-6 text-sm text-gray-500">Nothing scheduled.</p>
@@ -82,8 +86,11 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
 
             <div class="bg-white rounded-lg shadow-sm">
-                <div class="px-5 py-3 border-b border-gray-100">
+                <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
                     <h2 class="font-medium text-gray-800">Low stock</h2>
+                    @can('manage-inventory')
+                        <a href="{{ route('inventory.reorder') }}" wire:navigate class="text-xs text-indigo-600 hover:text-indigo-800">Reorder</a>
+                    @endcan
                 </div>
                 @if ($lowStock->isEmpty())
                     <p class="px-5 py-6 text-sm text-gray-500">Everything's above its reorder point.</p>
