@@ -97,6 +97,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Inventory items. Static segments (create) must be registered before the
     // {itemId} wildcard so "inventory/create" isn't swallowed as an id.
     Volt::route('inventory', 'inventory.index')->name('inventory.index');
+    // Low-stock reorder view (static — must precede the {itemId} wildcard).
+    Volt::route('inventory/reorder', 'inventory.reorder')->name('inventory.reorder');
     // create + edit share one form component (mount receives an optional id).
     Volt::route('inventory/create', 'inventory.form')->name('inventory.create');
     Volt::route('inventory/{itemId}/edit', 'inventory.form')->name('inventory.edit');

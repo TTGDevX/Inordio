@@ -95,4 +95,19 @@ class InventoryItem extends Model
     {
         return (float) $this->stockLevels()->sum('quantity');
     }
+
+    /**
+     * The preferred supplier offering (falls back to the first), read from the
+     * loaded collection so it plays nicely with eager loading.
+     */
+    public function preferredOffering(): ?ItemSupplier
+    {
+        return $this->supplierOfferings->firstWhere('is_preferred', true)
+            ?? $this->supplierOfferings->first();
+    }
+
+    public function preferredSupplierName(): ?string
+    {
+        return $this->preferredOffering()?->supplier?->name;
+    }
 }
