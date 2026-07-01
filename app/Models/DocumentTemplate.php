@@ -17,7 +17,7 @@ class DocumentTemplate extends Model
 {
     use BelongsToTenant;
 
-    public const TYPES = ['invoice_email', 'quote_email'];
+    public const TYPES = ['invoice_email', 'quote_email', 'payment_receipt'];
 
     /**
      * Tokens available to each template type (for the editor legend).
@@ -29,6 +29,7 @@ class DocumentTemplate extends Model
         return match ($type) {
             'invoice_email' => ['company_name', 'customer_name', 'invoice_number', 'invoice_total', 'invoice_balance', 'invoice_due_date'],
             'quote_email' => ['company_name', 'customer_name', 'quote_number', 'quote_total', 'quote_valid_until'],
+            'payment_receipt' => ['company_name', 'customer_name', 'invoice_number', 'payment_amount', 'payment_method', 'payment_date', 'invoice_balance'],
             default => ['company_name', 'customer_name'],
         };
     }
@@ -48,6 +49,10 @@ class DocumentTemplate extends Model
             'quote_email' => [
                 'subject' => 'Quote {{ quote_number }} from {{ company_name }}',
                 'body' => "Hi {{ customer_name }},\n\nHere is quote {{ quote_number }} for {{ quote_total }}, valid until {{ quote_valid_until }}.\n\nWe'd be glad to answer any questions.",
+            ],
+            'payment_receipt' => [
+                'subject' => 'Receipt for invoice {{ invoice_number }}',
+                'body' => "Hi {{ customer_name }},\n\nThank you — we've received your payment of {{ payment_amount }} ({{ payment_method }}) on {{ payment_date }} toward invoice {{ invoice_number }}. Your remaining balance is {{ invoice_balance }}.\n\nWe appreciate your business.",
             ],
             default => ['subject' => '', 'body' => ''],
         };

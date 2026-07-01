@@ -60,7 +60,7 @@ new #[Layout('layouts.app')] class extends Component {
     {
         return [
             'types' => DocumentTemplate::TYPES,
-            'labels' => ['invoice_email' => 'Invoice email', 'quote_email' => 'Quote email'],
+            'labels' => ['invoice_email' => 'Invoice email', 'quote_email' => 'Quote email', 'payment_receipt' => 'Payment receipt'],
         ];
     }
 }; ?>

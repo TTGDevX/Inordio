@@ -13,6 +13,7 @@ new #[Layout('layouts.app')] class extends Component {
     public string $payMethod = 'etransfer';
     public string $payReference = '';
     public string $payNote = '';
+    public bool $emailReceipt = true;
     public string $statusMessage = '';
 
     public function mount(string $invoiceId): void
@@ -74,16 +75,26 @@ new #[Layout('layouts.app')] class extends Component {
             'payNote' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $this->invoice->recordPayment(
+        $payment = $this->invoice->recordPayment(
             (float) $validated['payAmount'],
             PaymentMethod::from($validated['payMethod']),
             $this->payReference ?: null,
             $this->payNote ?: null,
         );
 
+        $emailed = false;
+        if ($this->emailReceipt && $this->invoice->customer->email) {
+            $company = \App\Models\CompanySetting::current();
+            $mail = \App\Services\TenantMailer::resolve($company);
+            \Illuminate\Support\Facades\Mail::mailer($mail['mailer'])
+                ->to($this->invoice->customer->email)
+                ->send(new \App\Mail\PaymentReceiptMail($this->invoice, $payment, $company));
+            $emailed = true;
+        }
+
         $this->reset(['payReference', 'payNote']);
         $this->reload();
-        $this->statusMessage = 'Payment recorded.';
+        $this->statusMessage = $emailed ? 'Payment recorded and receipt emailed.' : 'Payment recorded.';
     }
 
     public function with(): array
@@ -244,6 +255,12 @@ new #[Layout('layouts.app')] class extends Component {
                             <x-primary-button>Record payment</x-primary-button>
                         </div>
                     </form>
+                    @if ($invoice->customer->email)
+                        <label class="mt-3 inline-flex items-center gap-2 text-sm text-gray-600">
+                            <input type="checkbox" wire:model="emailReceipt" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            Email a receipt to {{ $invoice->customer->email }}
+                        </label>
+                    @endif
                 @endif
             @endcan
         </div>
