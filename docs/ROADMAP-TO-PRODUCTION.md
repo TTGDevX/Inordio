@@ -21,7 +21,7 @@ What remains is (A) a handful of build-ready features, (B) things that need an a
 7. **Server-side PDF (DomPDF)** — attach real PDF invoices/quotes to emails. **✅ built** (guarded by `class_exists`; run `composer require barryvdh/laravel-dompdf` on the host to activate the attachment).
 8. **Back-orders feed the reorder view** — short-picked shortfalls surface as suggested reorders. **✅ built** ("Back-ordered from picks" section on Reorder, open jobs only).
 9. **API writes + webhooks** — **🟡 writes built** (POST customers/jobs, PATCH customers, gate-enforced). Outbound **webhooks** remain.
-10. **User-editable print/PDF templates** — email templates are editable; document templates are still fixed Blade.
+10. **User-editable print/PDF templates** — **✅ built** (settings-driven: editable Terms & conditions block + show/hide GST/HST number on all print + PDF docs). A full WYSIWYG editor is intentionally out of scope.
 11. **In-app / email notifications** — "job assigned to me", "invoice overdue", "stock low". **🟡 started** — in-app database notifications built with a "job assigned" type + Alerts inbox/badge; more types (overdue, low stock) and email channel can layer on.
 12. **Global search** — one box to jump to any customer / job / invoice / item. **✅ built** (`/search`, live, tenant-scoped).
 

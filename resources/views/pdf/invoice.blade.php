@@ -21,6 +21,7 @@
                     @foreach (array_filter([$co->address_line1, trim(($co->city ?? '').' '.($co->province ?? '').' '.($co->postal_code ?? '')), $co->phone, $co->email, $co->website]) as $l)
                         {{ $l }}<br>
                     @endforeach
+                    @if ($co->show_tax_number && $co->tax_number)GST/HST: {{ $co->tax_number }}@endif
                 </div>
             </td>
             <td class="right">
@@ -60,6 +61,10 @@
 
     @if ($co->invoice_footer)
         <p class="muted" style="margin-top:24px; white-space:pre-line;">{{ $co->invoice_footer }}</p>
+    @endif
+
+    @if ($co->document_terms)
+        <p style="margin-top:16px; font-size:11px;"><strong>Terms &amp; conditions</strong><br><span class="muted" style="white-space:pre-line;">{{ $co->document_terms }}</span></p>
     @endif
 </body>
 </html>

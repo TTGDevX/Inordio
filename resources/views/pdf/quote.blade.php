@@ -54,5 +54,9 @@
     @if ($co->invoice_footer)
         <p class="muted" style="margin-top:24px; white-space:pre-line;">{{ $co->invoice_footer }}</p>
     @endif
+
+    @if ($co->document_terms)
+        <p style="margin-top:16px; font-size:11px;"><strong>Terms &amp; conditions</strong><br><span class="muted" style="white-space:pre-line;">{{ $co->document_terms }}</span></p>
+    @endif
 </body>
 </html>

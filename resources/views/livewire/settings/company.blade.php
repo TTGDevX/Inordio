@@ -27,6 +27,8 @@ new #[Layout('layouts.app')] class extends Component {
     public string $quote_prefix = 'Q-';
     public int $quote_next_number = 1;
     public ?string $default_labour_rate = null;
+    public string $document_terms = '';
+    public bool $show_tax_number = true;
     public ?string $existingLogo = null;
 
     // Outgoing email (per-tenant SMTP).
@@ -66,6 +68,8 @@ new #[Layout('layouts.app')] class extends Component {
         $this->quote_prefix = $s->quote_prefix ?? 'Q-';
         $this->quote_next_number = (int) ($s->quote_next_number ?: 1);
         $this->default_labour_rate = $s->default_labour_rate !== null ? (string) (float) $s->default_labour_rate : '';
+        $this->document_terms = (string) $s->document_terms;
+        $this->show_tax_number = (bool) $s->show_tax_number;
         $this->existingLogo = $s->logo_path;
 
         $this->mail_host = (string) $s->mail_host;
@@ -99,6 +103,8 @@ new #[Layout('layouts.app')] class extends Component {
             'quote_prefix' => ['nullable', 'string', 'max:12'],
             'quote_next_number' => ['required', 'integer', 'min:1'],
             'default_labour_rate' => ['nullable', 'numeric', 'min:0'],
+            'document_terms' => ['nullable', 'string', 'max:2000'],
+            'show_tax_number' => ['boolean'],
             'mail_host' => ['nullable', 'string', 'max:255'],
             'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'mail_encryption' => ['nullable', 'in:tls,ssl'],
@@ -268,6 +274,19 @@ new #[Layout('layouts.app')] class extends Component {
                     class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     placeholder="e.g. payment instructions, thank-you note"></textarea>
             </div>
+
+            <div>
+                <x-input-label for="document_terms" value="Terms & conditions (printed on quotes & invoices)" />
+                <textarea id="document_terms" wire:model="document_terms" rows="3"
+                    class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="e.g. warranty, payment policy, cancellation terms"></textarea>
+                <x-input-error :messages="$errors->get('document_terms')" class="mt-2" />
+            </div>
+
+            <label class="inline-flex items-center gap-2 text-sm text-gray-600">
+                <input type="checkbox" wire:model="show_tax_number" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                Show my GST/HST number on invoices
+            </label>
 
             <div class="border-t border-gray-100 pt-4">
                 <h2 class="text-sm font-semibold text-gray-700">Document numbering</h2>

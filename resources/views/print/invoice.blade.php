@@ -23,7 +23,7 @@
             @foreach ($coAddr as $cl)
                 <p class="text-xs text-gray-500">{{ $cl }}</p>
             @endforeach
-            @if ($co->tax_number)
+            @if ($co->show_tax_number && $co->tax_number)
                 <p class="text-xs text-gray-500">GST/HST: {{ $co->tax_number }}</p>
             @endif
             <p class="text-sm font-semibold mt-1" @if ($co->accent_color) style="color: {{ $co->accent_color }}" @endif>Invoice</p>
@@ -122,6 +122,13 @@
 
     @if ($co->invoice_footer)
         <div class="mt-8 border-t border-gray-200 pt-4 text-sm text-gray-600 whitespace-pre-line">{{ $co->invoice_footer }}</div>
+    @endif
+
+    @if ($co->document_terms)
+        <div class="mt-6 text-xs text-gray-500">
+            <p class="font-semibold text-gray-600">Terms &amp; conditions</p>
+            <p class="whitespace-pre-line">{{ $co->document_terms }}</p>
+        </div>
     @endif
 
     <p class="mt-10 text-center text-xs text-gray-400">Thank you for your business.</p>

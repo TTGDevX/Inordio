@@ -90,4 +90,11 @@
     @if ($co->invoice_footer)
         <div class="mt-8 border-t border-gray-200 pt-4 text-sm text-gray-600 whitespace-pre-line">{{ $co->invoice_footer }}</div>
     @endif
+
+    @if ($co->document_terms)
+        <div class="mt-6 text-xs text-gray-500">
+            <p class="font-semibold text-gray-600">Terms &amp; conditions</p>
+            <p class="whitespace-pre-line">{{ $co->document_terms }}</p>
+        </div>
+    @endif
 @endsection
