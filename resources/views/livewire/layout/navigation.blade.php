@@ -100,6 +100,9 @@ new class extends Component
                             <x-dropdown-link :href="route('settings.company')" wire:navigate>
                                 {{ __('Company settings') }}
                             </x-dropdown-link>
+                            <x-dropdown-link :href="route('settings.templates')" wire:navigate>
+                                {{ __('Email templates') }}
+                            </x-dropdown-link>
                         @endcan
 
                         @can('view-audit')

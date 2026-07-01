@@ -3,8 +3,7 @@
         {{ $co->legal_name ?: (tenant('name') ?? config('app.name')) }}
     </h2>
 
-    <p>Hi {{ $quote->customer->contact_name ?: $quote->customer->name }},</p>
-    <p>Here is your quote <strong>{{ $quote->number }}</strong>.</p>
+    <div style="font-size: 14px; line-height: 1.5;">{!! nl2br(e($bodyMessage ?? '')) !!}</div>
 
     <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px;">
         <tr>

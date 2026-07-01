@@ -57,7 +57,7 @@ The engine is built, but several spec'd pieces are missing and they're what make
 
 You specifically want IN-style templating of the documents and emails. Concretely:
 
-- **Email delivery** ✅ — quotes/invoices/reminders send via Mailables; **per-tenant SMTP** is configurable in Company Settings (June 2026). *Templating* of the subject/body is still fixed in Blade — user-editable templates are the remaining piece (in progress).
+- **Email delivery + templates** ✅ — quotes/invoices/reminders send via Mailables; **per-tenant SMTP** configurable; **user-editable subject/body templates** with safe `{{ token }}` substitution at `settings/templates` (June 2026).
 - **Automated reminders** ✅ — `invoices:send-reminders` scheduled daily; reminder body is the invoice email (reminder variant).
 - **Document/PDF templates** 🟡 — branding (logo, colours, footer/terms) IS pulled from company settings; a user-editable template editor is the open part.
 - **Recurring invoices / auto-billing** 🟡 — the brief's **Service Agreements are built** (recurring *jobs*); recurring *invoices* specifically could layer on.
