@@ -35,7 +35,13 @@ new #[Layout('layouts.app')] class extends Component {
 <div class="py-6 sm:py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-        <h1 class="text-xl font-semibold text-gray-800">Dashboard</h1>
+        <div class="flex items-center justify-between">
+            <h1 class="text-xl font-semibold text-gray-800">Dashboard</h1>
+            <a href="{{ route('board') }}" wire:navigate
+               class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                Ops board
+            </a>
+        </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <a href="{{ route('quotes.index') }}" wire:navigate class="block bg-white rounded-lg shadow-sm p-5 hover:shadow">

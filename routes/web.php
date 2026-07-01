@@ -24,6 +24,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Reports
     Volt::route('reports', 'reports.index')->name('reports.index');
 
+    // Ops board (kiosk / wall screen — auto-refreshing jobs + picking).
+    Volt::route('board', 'board')->name('board');
+
     // Audit trail (Admin+)
     Volt::route('audit', 'audit.index')->name('audit.index');
 
