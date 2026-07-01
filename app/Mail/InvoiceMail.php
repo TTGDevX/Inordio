@@ -62,4 +62,27 @@ class InvoiceMail extends Mailable
             'bodyMessage' => \App\Models\DocumentTemplate::render($template['body'], $this->vars()),
         ]);
     }
+
+    /**
+     * Attach a server-rendered PDF of the invoice — only when DomPDF is
+     * installed (barryvdh/laravel-dompdf). Degrades gracefully without it.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        if (! class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            return [];
+        }
+
+        $invoice = $this->invoice;
+        $company = $this->company;
+
+        return [
+            \Illuminate\Mail\Mailables\Attachment::fromData(
+                fn () => \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', ['invoice' => $invoice, 'co' => $company])->output(),
+                'Invoice-'.$this->invoice->number.'.pdf',
+            )->withMime('application/pdf'),
+        ];
+    }
 }

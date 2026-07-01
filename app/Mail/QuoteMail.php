@@ -57,4 +57,26 @@ class QuoteMail extends Mailable
             'bodyMessage' => \App\Models\DocumentTemplate::render($template['body'], $this->vars()),
         ]);
     }
+
+    /**
+     * Attach a server-rendered PDF of the quote — only when DomPDF is installed.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        if (! class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            return [];
+        }
+
+        $quote = $this->quote;
+        $company = $this->company;
+
+        return [
+            \Illuminate\Mail\Mailables\Attachment::fromData(
+                fn () => \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.quote', ['quote' => $quote, 'co' => $company])->output(),
+                'Quote-'.$this->quote->number.'.pdf',
+            )->withMime('application/pdf'),
+        ];
+    }
 }

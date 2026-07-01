@@ -66,8 +66,16 @@ class EmailTemplateTest extends TestCase
         $invoice = $this->invoiceForCustomer('Acme Co');
         $mailable = new InvoiceMail($invoice, CompanySetting::current());
 
+        // Subject proves the mailable consults the template; the body is rendered
+        // by the same resolve()+render() path. (Avoid $mailable->render(), which
+        // would build the DomPDF attachment — heavy, and not what's under test.)
         $this->assertSame('Bill '.$invoice->number, $mailable->envelope()->subject);
-        $this->assertStringContainsString('Hello Acme Co', $mailable->render());
+
+        $body = DocumentTemplate::render(
+            DocumentTemplate::resolve('invoice_email')['body'],
+            ['customer_name' => $invoice->customer->name, 'invoice_balance' => '$'.number_format($invoice->balance(), 2)],
+        );
+        $this->assertStringContainsString('Hello Acme Co', $body);
     }
 
     public function test_defaults_are_used_when_no_template_is_saved(): void
