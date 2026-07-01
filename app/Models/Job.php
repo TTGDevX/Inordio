@@ -139,6 +139,30 @@ class Job extends Model
         return $this->hasMany(JobChecklist::class)->latest();
     }
 
+    /**
+     * Labour/time entries logged against this job.
+     */
+    public function timeEntries(): HasMany
+    {
+        return $this->hasMany(JobTimeEntry::class)->latest();
+    }
+
+    /**
+     * Billable labour total (sum of time entries: hours × rate).
+     */
+    public function labourTotal(): float
+    {
+        return \App\Support\Money::sum($this->timeEntries->map(fn (JobTimeEntry $e) => $e->amount()));
+    }
+
+    /**
+     * Total logged hours across all time entries.
+     */
+    public function loggedHours(): float
+    {
+        return (float) $this->timeEntries->sum(fn (JobTimeEntry $e) => (float) $e->hours);
+    }
+
     public function subtotal(): float
     {
         return \App\Support\Money::sum($this->lines->map(fn (JobLineItem $line) => $line->lineTotal()));

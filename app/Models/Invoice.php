@@ -119,6 +119,18 @@ class Invoice extends Model
             ]);
         }
 
+        // Append billable labour (hours × rate) as its own lines, if any logged.
+        $position = $job->lines->count();
+        foreach ($job->timeEntries as $entry) {
+            $invoice->lines()->create([
+                'inventory_item_id' => null,
+                'description' => $entry->description ?: 'Labour',
+                'quantity' => $entry->hours,
+                'unit_price' => $entry->rate,
+                'position' => $position++,
+            ]);
+        }
+
         $invoice->load('lines');
         $tax = app(TaxCalculator::class)->calculate($customer->province, $invoice->subtotal(), $customer->tax_exempt);
 

@@ -26,6 +26,7 @@ new #[Layout('layouts.app')] class extends Component {
     public int $invoice_next_number = 1;
     public string $quote_prefix = 'Q-';
     public int $quote_next_number = 1;
+    public ?string $default_labour_rate = null;
     public ?string $existingLogo = null;
 
     // Outgoing email (per-tenant SMTP).
@@ -64,6 +65,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->invoice_next_number = (int) ($s->invoice_next_number ?: 1);
         $this->quote_prefix = $s->quote_prefix ?? 'Q-';
         $this->quote_next_number = (int) ($s->quote_next_number ?: 1);
+        $this->default_labour_rate = $s->default_labour_rate !== null ? (string) (float) $s->default_labour_rate : '';
         $this->existingLogo = $s->logo_path;
 
         $this->mail_host = (string) $s->mail_host;
@@ -96,6 +98,7 @@ new #[Layout('layouts.app')] class extends Component {
             'invoice_next_number' => ['required', 'integer', 'min:1'],
             'quote_prefix' => ['nullable', 'string', 'max:12'],
             'quote_next_number' => ['required', 'integer', 'min:1'],
+            'default_labour_rate' => ['nullable', 'numeric', 'min:0'],
             'mail_host' => ['nullable', 'string', 'max:255'],
             'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'mail_encryption' => ['nullable', 'in:tls,ssl'],
@@ -116,6 +119,8 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         $data = $this->validate();
+        $data['default_labour_rate'] = ($this->default_labour_rate === '' || $this->default_labour_rate === null)
+            ? null : $this->default_labour_rate;
         $settings = CompanySetting::current();
 
         if ($this->logo) {
@@ -287,6 +292,11 @@ new #[Layout('layouts.app')] class extends Component {
                         <x-input-label for="quote_next_number" value="Next quote number" />
                         <x-text-input id="quote_next_number" type="number" min="1" wire:model="quote_next_number" class="block mt-1 w-full" />
                         <x-input-error :messages="$errors->get('quote_next_number')" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-input-label for="default_labour_rate" value="Default labour rate ($/hr)" />
+                        <x-text-input id="default_labour_rate" type="number" step="0.01" min="0" wire:model="default_labour_rate" class="block mt-1 w-full" placeholder="e.g. 95.00" />
+                        <x-input-error :messages="$errors->get('default_labour_rate')" class="mt-2" />
                     </div>
                 </div>
             </div>

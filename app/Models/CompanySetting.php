@@ -11,6 +11,7 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
     'phone', 'email', 'website', 'tax_number', 'payment_terms', 'invoice_footer', 'accent_color', 'logo_path',
     'invoice_prefix', 'invoice_next_number', 'quote_prefix', 'quote_next_number',
     'mail_host', 'mail_port', 'mail_encryption', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name',
+    'default_labour_rate',
 ])]
 class CompanySetting extends Model
 {

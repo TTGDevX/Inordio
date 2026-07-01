@@ -14,7 +14,7 @@ What remains is (A) a handful of build-ready features, (B) things that need an a
 
 1. **Ops display boards (kiosk/wall screen)** — auto-refreshing read-only screens a shop TV points at: today's jobs + open pick lists. **✅ v1 built (logged-in kiosk, `/board`, auto-refresh).** *v2 remaining = tokenless display key in the URL so an unattended screen needs no login.*
 2. **Camera barcode/QR scanning** — scan-to-pick / scan-to-receive; labels + tokens already exist to scan. *Needs a short screenshot loop to tune the camera UX.*
-3. **Labour / time tracking on jobs** — techs log hours; hours become invoice lines. Trades bill labour; today it's a manual line item. *High value.*
+3. **Labour / time tracking on jobs** — techs log hours; hours become invoice lines. **✅ built** (per-entry hours×rate on the job, flows onto the invoice; default rate in Company Settings).
 4. **GST/HST collected report** — tax-period summary of tax collected for filing. Tax is already snapshotted on every invoice, so the data exists. *High value, Canadian-specific.*
 5. **Payment receipt emails** — email a receipt when a payment is recorded (mail + template infra already exists).
 6. **Customer sign-off / signature capture** — customer signs on job completion; attaches to the job. Pairs with checklists.

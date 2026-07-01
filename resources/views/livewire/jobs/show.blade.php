@@ -38,12 +38,17 @@ new #[Layout('layouts.app')] class extends Component {
     public ?string $billAmount = null;
     public string $billLabel = 'Deposit';
 
-    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoices.lines', 'invoices.payments', 'pickList.items.item', 'pickList.destination', 'photos.uploader', 'noteThread.author', 'checklists.items'];
+    public string $timeHours = '';
+    public string $timeRate = '';
+    public string $timeDescription = '';
+
+    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoices.lines', 'invoices.payments', 'pickList.items.item', 'pickList.destination', 'photos.uploader', 'noteThread.author', 'checklists.items', 'timeEntries.user'];
 
     public function mount(string $jobId): void
     {
         $this->job = Job::with(self::EAGER)->findOrFail($jobId);
         $this->assignUserId = $this->job->assigned_user_id;
+        $this->timeRate = (string) (\App\Models\CompanySetting::current()->default_labour_rate ?: '');
         $this->syncChecklistNotes();
     }
 
@@ -232,6 +237,41 @@ new #[Layout('layouts.app')] class extends Component {
             $note->delete();
             $this->reload();
             $this->statusMessage = 'Note removed.';
+        }
+    }
+
+    /** Log billable labour hours on the job (techs — work-jobs). */
+    public function addTimeEntry(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('work-jobs'), 403);
+        $this->validate([
+            'timeHours' => ['required', 'numeric', 'min:0.01'],
+            'timeRate' => ['required', 'numeric', 'min:0'],
+            'timeDescription' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->job->timeEntries()->create([
+            'user_id' => auth()->id(),
+            'description' => $this->timeDescription ?: null,
+            'hours' => $this->timeHours,
+            'rate' => $this->timeRate,
+            'performed_on' => now()->toDateString(),
+        ]);
+
+        $this->reset(['timeHours', 'timeDescription']);
+        $this->reload();
+        $this->statusMessage = 'Time logged.';
+    }
+
+    public function removeTimeEntry(int $entryId): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
+
+        $entry = $this->job->timeEntries()->whereKey($entryId)->first();
+        if ($entry) {
+            $entry->delete();
+            $this->reload();
+            $this->statusMessage = 'Time entry removed.';
         }
     }
 
@@ -459,6 +499,66 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                 </div>
             @endcan
+        </div>
+
+        {{-- Labour & time: techs log billable hours; they flow onto the invoice --}}
+        <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
+            <div class="flex items-center justify-between">
+                <h2 class="font-medium text-gray-800">Labour &amp; time</h2>
+                @if ($job->timeEntries->isNotEmpty())
+                    <p class="text-sm text-gray-500 tabular-nums">
+                        {{ rtrim(rtrim(number_format($job->loggedHours(), 2), '0'), '.') }} hrs · ${{ number_format($job->labourTotal(), 2) }}
+                    </p>
+                @endif
+            </div>
+
+            @can('work-jobs')
+                <div class="mt-3 flex flex-wrap items-end gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500">Hours</label>
+                        <input type="number" step="0.25" min="0" wire:model="timeHours"
+                            class="mt-1 block w-24 rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Rate ($/hr)</label>
+                        <input type="number" step="0.01" min="0" wire:model="timeRate"
+                            class="mt-1 block w-28 rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex-1 min-w-[10rem]">
+                        <label class="block text-xs text-gray-500">Description (optional)</label>
+                        <input type="text" wire:model="timeDescription"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <x-secondary-button wire:click="addTimeEntry" type="button">Log time</x-secondary-button>
+                </div>
+                <x-input-error :messages="$errors->get('timeHours')" class="mt-1" />
+                <x-input-error :messages="$errors->get('timeRate')" class="mt-1" />
+            @endcan
+
+            @if ($job->timeEntries->isNotEmpty())
+                <ul class="mt-4 divide-y divide-gray-100 border-t border-gray-100">
+                    @foreach ($job->timeEntries as $entry)
+                        <li wire:key="te-{{ $entry->id }}" class="flex items-center justify-between gap-3 py-2 text-sm">
+                            <div class="min-w-0">
+                                <p class="text-gray-900">{{ $entry->description ?: 'Labour' }}</p>
+                                <p class="text-xs text-gray-400">
+                                    {{ rtrim(rtrim(number_format((float) $entry->hours, 2), '0'), '.') }} hrs × ${{ number_format((float) $entry->rate, 2) }}
+                                    · {{ $entry->user?->name ?? '—' }} · {{ $entry->performed_on?->format('M j') }}
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <span class="tabular-nums text-gray-900">${{ number_format($entry->amount(), 2) }}</span>
+                                @can('manage-jobs')
+                                    <button type="button" wire:click="removeTimeEntry({{ $entry->id }})" wire:confirm="Remove this time entry?"
+                                        class="text-xs text-red-600 hover:text-red-800">Remove</button>
+                                @endcan
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <p class="mt-2 text-sm text-gray-500">No time logged.</p>
+            @endif
         </div>
 
         {{-- Notes & updates: a timestamped thread from the field/office --}}
