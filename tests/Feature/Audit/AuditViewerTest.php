@@ -35,12 +35,12 @@ class AuditViewerTest extends TestCase
     {
         $this->actingAs(User::factory()->admin()->create(['tenant_id' => $this->tenant->id]));
 
-        // Generate an entry to view.
-        Customer::factory()->create(['name' => 'Audited Co']);
+        // Quote is an audited model (the Auditable trait), so creating one logs it.
+        Quote::factory()->create(['customer_id' => Customer::factory()->create()->id]);
 
         Volt::test('audit.index')
             ->assertOk()
-            ->assertSee('Customer')
+            ->assertSee('Quote')
             ->assertSee('Created');
     }
 
