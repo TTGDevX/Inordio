@@ -54,6 +54,7 @@ All models use the `BelongsToTenant` trait (stancl/tenancy) and carry a `tenant_
 ### Field documentation (post-MVP slices)
 - **Customer statements**: `print/statement.blade.php` + `customers/{customerId}/statement` route (gated `manage-customers`), branded letterhead, table of invoices with balance owing. "Statement" link on the customer page.
 - **Job photos**: `job_photos` table + `JobPhoto` model (`BelongsToTenant`, `url()`), `Job::photos()`. `jobs/show` uses `WithFileUploads` — techs (`work-jobs`) attach a captured/uploaded photo with optional caption (stored at `job-photos/{tenant}` on the public disk); office (`manage-jobs`) can remove. Mobile-friendly `capture="environment"` file input. Needs `php artisan storage:link` once (already done for the logo).
+- **Audit viewer**: `audit/index` Volt page (route `audit`, gated `view-audit` = Admin+), reads the existing `audit_logs` (written by the `Auditable` trait). Paginated 50/page, `#[Url]` filters by record type + action, badge per action, compact changed-fields summary. Linked from the account dropdown ("Audit trail"). No schema change.
 
 ---
 
@@ -72,6 +73,7 @@ Defined in `app/Providers/AppServiceProvider.php` via `Gate::define`, keyed to t
 | `work-jobs` | Technician | job start/complete (techs in the field) |
 | `manage-invoices` | Office | create from job, mark-sent, void |
 | `record-payments` | Office | record a payment |
+| `view-audit` | Admin | read the audit trail |
 
 Enforced **server-side** (`abort_unless(Gate::allows(...), 403)` in component mount/actions) AND reflected in the UI with `@can`. Viewers are read-only everywhere.
 

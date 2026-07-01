@@ -99,6 +99,12 @@ new class extends Component
                             </x-dropdown-link>
                         @endcan
 
+                        @can('view-audit')
+                            <x-dropdown-link :href="route('audit.index')" wire:navigate>
+                                {{ __('Audit trail') }}
+                            </x-dropdown-link>
+                        @endcan
+
                         <!-- Authentication -->
                         <button wire:click="logout" class="w-full text-start">
                             <x-dropdown-link>

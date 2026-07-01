@@ -20,6 +20,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Reports
     Volt::route('reports', 'reports.index')->name('reports.index');
 
+    // Audit trail (Admin+)
+    Volt::route('audit', 'audit.index')->name('audit.index');
+
     // Purchase orders. Static "create" before {poId}.
     Volt::route('purchase-orders', 'purchasing.index')->name('purchasing.index');
     Volt::route('purchase-orders/create', 'purchasing.form')->name('purchasing.create');

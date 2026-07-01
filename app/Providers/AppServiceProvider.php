@@ -53,5 +53,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-settings', $atLeast(UserRole::Admin));
         Gate::define('view-reports', $atLeast(UserRole::Office));
         Gate::define('manage-purchasing', $atLeast(UserRole::Office));
+        // The audit trail (who changed what) is an admin accountability tool.
+        Gate::define('view-audit', $atLeast(UserRole::Admin));
     }
 }
