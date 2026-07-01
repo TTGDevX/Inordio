@@ -18,6 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('settings/company', 'settings.company')->name('settings.company');
     // Editable email templates (subject/body with {{ tokens }})
     Volt::route('settings/templates', 'settings.templates')->name('settings.templates');
+    // Developer API tokens
+    Volt::route('settings/api-tokens', 'settings.api-tokens')->name('settings.api-tokens');
 
     // Reports
     Volt::route('reports', 'reports.index')->name('reports.index');

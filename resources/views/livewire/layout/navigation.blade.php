@@ -103,6 +103,9 @@ new class extends Component
                             <x-dropdown-link :href="route('settings.templates')" wire:navigate>
                                 {{ __('Email templates') }}
                             </x-dropdown-link>
+                            <x-dropdown-link :href="route('settings.api-tokens')" wire:navigate>
+                                {{ __('API tokens') }}
+                            </x-dropdown-link>
                         @endcan
 
                         @can('view-audit')
