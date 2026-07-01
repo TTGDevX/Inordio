@@ -23,7 +23,7 @@ What remains is (A) a handful of build-ready features, (B) things that need an a
 9. **API writes + webhooks** — the JSON API is read-only in v1; add POST/PATCH and outbound webhooks.
 10. **User-editable print/PDF templates** — email templates are editable; document templates are still fixed Blade.
 11. **In-app / email notifications** — "job assigned to me", "invoice overdue", "stock low".
-12. **Global search** — one box to jump to any customer / job / invoice / item.
+12. **Global search** — one box to jump to any customer / job / invoice / item. **✅ built** (`/search`, live, tenant-scoped).
 
 ## B. Needs an account or credentials from Scott
 
