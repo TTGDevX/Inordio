@@ -407,7 +407,16 @@ new #[Layout('layouts.app')] class extends Component {
     {
         abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
         $this->validate(['assignUserId' => ['nullable', 'integer', 'exists:users,id']]);
+
+        $previous = $this->job->assigned_user_id;
         $this->job->update(['assigned_user_id' => $this->assignUserId ?: null]);
+
+        // Notify the newly-assigned tech (unless they assigned it to themselves).
+        if ($this->assignUserId && $this->assignUserId !== $previous && $this->assignUserId !== auth()->id()) {
+            $assignee = User::find($this->assignUserId);
+            $assignee?->notify(new \App\Notifications\JobAssigned($this->job));
+        }
+
         $this->reload();
         $this->statusMessage = 'Technician assigned.';
     }

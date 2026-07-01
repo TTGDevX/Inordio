@@ -22,7 +22,7 @@ What remains is (A) a handful of build-ready features, (B) things that need an a
 8. **Back-orders feed the reorder view** — short-picked shortfalls surface as suggested reorders. **✅ built** ("Back-ordered from picks" section on Reorder, open jobs only).
 9. **API writes + webhooks** — the JSON API is read-only in v1; add POST/PATCH and outbound webhooks.
 10. **User-editable print/PDF templates** — email templates are editable; document templates are still fixed Blade.
-11. **In-app / email notifications** — "job assigned to me", "invoice overdue", "stock low".
+11. **In-app / email notifications** — "job assigned to me", "invoice overdue", "stock low". **🟡 started** — in-app database notifications built with a "job assigned" type + Alerts inbox/badge; more types (overdue, low stock) and email channel can layer on.
 12. **Global search** — one box to jump to any customer / job / invoice / item. **✅ built** (`/search`, live, tenant-scoped).
 
 ## B. Needs an account or credentials from Scott

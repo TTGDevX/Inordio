@@ -36,6 +36,11 @@ new class extends Component
                     <x-nav-link :href="route('search')" :active="request()->routeIs('search')" wire:navigate>
                         {{ __('Search') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('notifications')" :active="request()->routeIs('notifications')" wire:navigate>
+                        {{ __('Alerts') }}
+                        @php($unread = auth()->user()?->unreadNotifications()->count() ?? 0)
+                        @if ($unread)<span class="ml-1 inline-flex items-center rounded-full bg-indigo-600 px-1.5 py-0.5 text-xs font-medium text-white">{{ $unread }}</span>@endif
+                    </x-nav-link>
                     <x-nav-link :href="route('inventory.index')" :active="request()->routeIs('inventory.*')" wire:navigate>
                         {{ __('Inventory') }}
                     </x-nav-link>
@@ -147,6 +152,11 @@ new class extends Component
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('search')" :active="request()->routeIs('search')" wire:navigate>
                 {{ __('Search') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('notifications')" :active="request()->routeIs('notifications')" wire:navigate>
+                {{ __('Alerts') }}
+                @php($unreadR = auth()->user()?->unreadNotifications()->count() ?? 0)
+                @if ($unreadR)<span class="ml-1 inline-flex items-center rounded-full bg-indigo-600 px-1.5 py-0.5 text-xs font-medium text-white">{{ $unreadR }}</span>@endif
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('inventory.index')" :active="request()->routeIs('inventory.*')" wire:navigate>
                 {{ __('Inventory') }}

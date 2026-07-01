@@ -30,6 +30,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Global search (customers / jobs / invoices / inventory).
     Volt::route('search', 'search')->name('search');
 
+    // In-app notifications.
+    Volt::route('notifications', 'notifications')->name('notifications');
+
     // Audit trail (Admin+)
     Volt::route('audit', 'audit.index')->name('audit.index');
 
