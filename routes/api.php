@@ -1,16 +1,21 @@
 <?php
 
+use App\Enums\JobStatus;
+use App\Enums\Province;
 use App\Http\Middleware\AuthenticateApiToken;
 use App\Models\Customer;
 use App\Models\InventoryItem;
 use App\Models\Invoice;
 use App\Models\Job;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
 /*
  * First-party JSON API. Every route authenticates a bearer token and runs under
  * that token's tenant (AuthenticateApiToken), so the normal BelongsToTenant
- * scope isolates all data automatically. Read-only for v1.
+ * scope isolates all data automatically. Reads are open to any token; writes
+ * enforce the same role gates as the app (via the token's user).
  */
 Route::middleware(AuthenticateApiToken::class)->prefix('v1')->group(function () {
     Route::get('me', function () {
@@ -106,5 +111,68 @@ Route::middleware(AuthenticateApiToken::class)->prefix('v1')->group(function () 
                     'on_hand' => (float) ($i->on_hand ?? 0),
                 ]),
         ]);
+    });
+
+    // --- Writes (enforce the same role gates as the app) ---
+
+    $provinceRule = 'in:'.implode(',', array_map(fn (Province $p) => $p->value, Province::cases()));
+
+    Route::post('customers', function (Request $request) use ($provinceRule) {
+        abort_unless(Gate::allows('manage-customers'), 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'contact_name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'address_line1' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'province' => ['nullable', 'string', $provinceRule],
+            'postal_code' => ['nullable', 'string', 'max:10'],
+            'tax_exempt' => ['boolean'],
+        ]);
+
+        $customer = Customer::create($data);
+
+        return response()->json(['data' => ['id' => $customer->id, 'name' => $customer->name]], 201);
+    });
+
+    Route::patch('customers/{id}', function (Request $request, string $id) use ($provinceRule) {
+        abort_unless(Gate::allows('manage-customers'), 403);
+
+        $customer = Customer::findOrFail($id);
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'contact_name' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'province' => ['nullable', 'string', $provinceRule],
+            'tax_exempt' => ['boolean'],
+            'is_active' => ['boolean'],
+        ]);
+        $customer->update($data);
+
+        return response()->json(['data' => ['id' => $customer->id, 'name' => $customer->name, 'is_active' => (bool) $customer->is_active]]);
+    });
+
+    Route::post('jobs', function (Request $request) {
+        abort_unless(Gate::allows('manage-jobs'), 403);
+
+        $data = $request->validate([
+            'customer_id' => ['required', 'integer', 'exists:customers,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'scheduled_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $job = Job::create([
+            'customer_id' => $data['customer_id'],
+            'title' => $data['title'],
+            'status' => JobStatus::Scheduled,
+            'scheduled_at' => $data['scheduled_at'] ?? null,
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        return response()->json(['data' => ['id' => $job->id, 'number' => $job->number, 'title' => $job->title, 'status' => $job->status->value]], 201);
     });
 });
