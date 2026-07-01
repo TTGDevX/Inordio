@@ -87,6 +87,15 @@ class Job extends Model
         return $this->hasMany(JobPhoto::class)->latest();
     }
 
+    /**
+     * Timestamped note thread (updates from the field/office). Named
+     * noteThread() to avoid colliding with the single `notes` text column.
+     */
+    public function noteThread(): HasMany
+    {
+        return $this->hasMany(JobNote::class)->latest();
+    }
+
     public function subtotal(): float
     {
         return \App\Support\Money::sum($this->lines->map(fn (JobLineItem $line) => $line->lineTotal()));

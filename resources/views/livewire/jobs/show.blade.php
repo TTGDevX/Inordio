@@ -25,7 +25,9 @@ new #[Layout('layouts.app')] class extends Component {
     public $photo = null;
     public string $caption = '';
 
-    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoice', 'pickList.items.item', 'pickList.destination', 'photos.uploader'];
+    public string $newNote = '';
+
+    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoice', 'pickList.items.item', 'pickList.destination', 'photos.uploader', 'noteThread.author'];
 
     public function mount(string $jobId): void
     {
@@ -136,6 +138,36 @@ new #[Layout('layouts.app')] class extends Component {
             $photo->delete();
             $this->reload();
             $this->statusMessage = 'Photo removed.';
+        }
+    }
+
+    /**
+     * Add a timestamped note to the job thread. Field techs + office (work-jobs).
+     */
+    public function addNote(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('work-jobs'), 403);
+        $this->validate(['newNote' => ['required', 'string', 'max:2000']]);
+
+        $this->job->noteThread()->create([
+            'user_id' => auth()->id(),
+            'body' => $this->newNote,
+        ]);
+
+        $this->reset('newNote');
+        $this->reload();
+        $this->statusMessage = 'Note added.';
+    }
+
+    public function removeNote(int $noteId): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
+
+        $note = $this->job->noteThread()->whereKey($noteId)->first();
+        if ($note) {
+            $note->delete();
+            $this->reload();
+            $this->statusMessage = 'Note removed.';
         }
     }
 
@@ -290,6 +322,41 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                 </div>
             @endcan
+        </div>
+
+        {{-- Notes & updates: a timestamped thread from the field/office --}}
+        <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
+            <h2 class="font-medium text-gray-800">Notes &amp; updates</h2>
+
+            @can('work-jobs')
+                <div class="mt-3 flex flex-col gap-2">
+                    <textarea wire:model="newNote" rows="2" placeholder="Add an update…"
+                        class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                    @error('newNote') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                    <div>
+                        <x-secondary-button wire:click="addNote" type="button">Add note</x-secondary-button>
+                    </div>
+                </div>
+            @endcan
+
+            @if ($job->noteThread->isNotEmpty())
+                <ul class="mt-4 space-y-3">
+                    @foreach ($job->noteThread as $note)
+                        <li class="flex items-start justify-between gap-3 border-t border-gray-100 pt-3" wire:key="note-{{ $note->id }}">
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-900 whitespace-pre-line">{{ $note->body }}</p>
+                                <p class="mt-0.5 text-xs text-gray-400">{{ $note->author?->name ?? 'System' }} · {{ $note->created_at->format('M j, Y g:i A') }}</p>
+                            </div>
+                            @can('manage-jobs')
+                                <button type="button" wire:click="removeNote({{ $note->id }})" wire:confirm="Remove this note?"
+                                    class="shrink-0 text-xs text-red-600 hover:text-red-800">Remove</button>
+                            @endcan
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <p class="mt-3 text-sm text-gray-500">No notes yet.</p>
+            @endif
         </div>
 
         {{-- Status actions: techs work the job; office cancels. --}}
