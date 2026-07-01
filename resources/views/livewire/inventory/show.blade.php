@@ -47,6 +47,19 @@ new #[Layout('layouts.app')] class extends Component {
             ->findOrFail($this->item->id);
     }
 
+    /**
+     * Archive (hide from default catalogue) or restore. Non-destructive —
+     * existing stock and history are untouched. Office+ only.
+     */
+    public function toggleArchive(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $this->item->update(['is_active' => ! $this->item->is_active]);
+        $this->reloadItem();
+        $this->statusMessage = $this->item->is_active ? 'Item restored.' : 'Item archived.';
+    }
+
     public function addOffering(): void
     {
         abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
@@ -176,14 +189,25 @@ new #[Layout('layouts.app')] class extends Component {
             <a href="{{ route('inventory.index') }}" wire:navigate
                class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to inventory</a>
             @can('manage-inventory')
-                <a href="{{ route('inventory.edit', $item->id) }}" wire:navigate
-                   class="text-sm text-indigo-600 hover:text-indigo-800">Edit item</a>
+                <div class="flex items-center gap-4">
+                    <a href="{{ route('inventory.edit', $item->id) }}" wire:navigate
+                       class="text-sm text-indigo-600 hover:text-indigo-800">Edit item</a>
+                    <button type="button" wire:click="toggleArchive"
+                        wire:confirm="{{ $item->is_active ? 'Archive this item?' : 'Restore this item?' }}"
+                        class="text-sm {{ $item->is_active ? 'text-gray-500 hover:text-gray-700' : 'text-green-600 hover:text-green-800' }}">
+                        {{ $item->is_active ? 'Archive' : 'Restore' }}
+                    </button>
+                </div>
             @endcan
         </div>
 
         @if ($statusMessage)
             <div class="rounded-md bg-green-50 px-4 py-3 text-sm text-green-800">{{ $statusMessage }}</div>
         @endif
+
+        @unless ($item->is_active)
+            <div class="rounded-md bg-gray-100 px-4 py-3 text-sm text-gray-600">This item is archived — hidden from the default catalogue.</div>
+        @endunless
 
         <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
             <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">

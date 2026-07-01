@@ -26,6 +26,7 @@ class InventoryItemFactory extends Factory
             'cost' => $cost,
             'price' => round($cost * fake()->randomFloat(2, 1.2, 2.5), 2),
             'is_serialized' => false,
+            'is_active' => true,
         ];
     }
 

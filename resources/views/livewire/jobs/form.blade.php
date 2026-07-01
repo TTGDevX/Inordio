@@ -137,7 +137,7 @@ new #[Layout('layouts.app')] class extends Component {
     {
         return [
             'customers' => Customer::where('is_active', true)->orderBy('name')->get(),
-            'items' => InventoryItem::orderBy('name')->get(),
+            'items' => InventoryItem::where('is_active', true)->orderBy('name')->get(),
             'technicians' => User::orderBy('name')->get(),
         ];
     }

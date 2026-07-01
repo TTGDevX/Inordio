@@ -12,7 +12,15 @@ new #[Layout('layouts.app')] class extends Component {
     #[Url(as: 'q')]
     public string $search = '';
 
+    #[Url]
+    public bool $archived = false;
+
     public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedArchived(): void
     {
         $this->resetPage();
     }
@@ -20,6 +28,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function with(): array
     {
         $items = InventoryItem::query()
+            ->where('is_active', ! $this->archived)
             ->when($this->search !== '', function ($query) {
                 $term = '%'.$this->search.'%';
                 $query->where(function ($q) use ($term) {
@@ -54,7 +63,7 @@ new #[Layout('layouts.app')] class extends Component {
             @endcan
         </div>
 
-        <div class="relative">
+        <div class="flex flex-wrap items-center gap-4">
             <input
                 type="search"
                 wire:model.live.debounce.300ms="search"
@@ -62,6 +71,11 @@ new #[Layout('layouts.app')] class extends Component {
                 class="w-full sm:w-96 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                 autocomplete="off"
             />
+            <label class="inline-flex items-center gap-2 text-sm text-gray-600">
+                <input type="checkbox" wire:model.live="archived"
+                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                Show archived
+            </label>
         </div>
 
         <div wire:loading.delay class="text-sm text-gray-400">Searching…</div>

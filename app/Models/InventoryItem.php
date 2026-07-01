@@ -22,6 +22,7 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
     'cost',
     'price',
     'is_serialized',
+    'is_active',
     'photo_path',
 ])]
 class InventoryItem extends Model
@@ -36,6 +37,7 @@ class InventoryItem extends Model
             'average_cost' => 'decimal:2',
             'price' => 'decimal:2',
             'is_serialized' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
