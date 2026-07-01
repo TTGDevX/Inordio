@@ -120,6 +120,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Jobs. Static "create" before the {jobId} wildcard; param is {jobId}.
     Volt::route('jobs', 'jobs.index')->name('jobs.index');
+    Volt::route('jobs/schedule', 'jobs.schedule')->name('jobs.schedule');
     Volt::route('jobs/create', 'jobs.form')->name('jobs.create');
     Volt::route('jobs/{jobId}/edit', 'jobs.form')->name('jobs.edit');
     Volt::route('jobs/{jobId}', 'jobs.show')->name('jobs.show');

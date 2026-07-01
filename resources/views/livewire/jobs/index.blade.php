@@ -41,12 +41,18 @@ new #[Layout('layouts.app')] class extends Component {
 
         <div class="flex items-center justify-between gap-3">
             <h1 class="text-xl font-semibold text-gray-800">Jobs</h1>
-            @can('manage-jobs')
-                <a href="{{ route('jobs.create') }}" wire:navigate
-                   class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-                    New job
+            <div class="flex items-center gap-3">
+                <a href="{{ route('jobs.schedule') }}" wire:navigate
+                   class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                    Schedule
                 </a>
-            @endcan
+                @can('manage-jobs')
+                    <a href="{{ route('jobs.create') }}" wire:navigate
+                       class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                        New job
+                    </a>
+                @endcan
+            </div>
         </div>
 
         <div class="relative">
