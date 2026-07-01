@@ -47,7 +47,7 @@ The engine is built, but several spec'd pieces are missing and they're what make
 - **Camera barcode/QR scanning** ❌ — scan-to-pick, scan-to-receive, auto-deduct. Not built (top of build-ready roadmap; labels now exist to scan).
 - **Serialized-asset UI** ✅ (June 2026) — tree view, assemble/disassemble/move/retire with event history. Scan-to-explore pending the scanner.
 - **Item photos** ✅ (June 2026) — upload/replace/remove on the item page + thumbnails on the list.
-- **Back-order tracking / short-pick flagging** ❌ — pick list doesn't handle "item unavailable."
+- **Back-order tracking / short-pick flagging** ✅ (June 2026) — pick a line short (quantity picked vs needed) or mark it "none available"; the shortfall is recorded as back-order and completion consumes only what was picked.
 - **Movement history UI** ✅ (June 2026) — global movement log + per-item recent-movements panel.
 - **Low-stock alerts** 🟡 — dashboard shows low-stock count/list; no real notifications, and minimums are per-location (brief said per-item — confirm which you want).
 

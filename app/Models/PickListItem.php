@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
-#[Fillable(['pick_list_id', 'inventory_item_id', 'description', 'quantity', 'picked', 'from_location_id', 'position'])]
+#[Fillable(['pick_list_id', 'inventory_item_id', 'description', 'quantity', 'picked', 'picked_quantity', 'short_quantity', 'from_location_id', 'position'])]
 class PickListItem extends Model
 {
     /** @use HasFactory<PickListItemFactory> */
@@ -19,6 +19,8 @@ class PickListItem extends Model
     {
         return [
             'quantity' => 'decimal:2',
+            'picked_quantity' => 'decimal:2',
+            'short_quantity' => 'decimal:2',
             'picked' => 'boolean',
             'picked_at' => 'datetime',
         ];
@@ -40,13 +42,37 @@ class PickListItem extends Model
     }
 
     /**
-     * Mark this line picked from a source location (timestamp set directly).
+     * Mark this line picked from a source location. $pickedQty defaults to the
+     * full need; any shortfall is recorded as back-order (short_quantity).
      */
-    public function markPicked(int $fromLocationId): void
+    public function markPicked(int $fromLocationId, ?float $pickedQty = null): void
     {
+        $picked = $pickedQty ?? (float) $this->quantity;
+
         $this->picked = true;
         $this->from_location_id = $fromLocationId;
+        $this->picked_quantity = $picked;
+        $this->short_quantity = max(0, (float) $this->quantity - $picked);
         $this->picked_at = now();
         $this->save();
+    }
+
+    /**
+     * Resolve the line with nothing available — the whole quantity is
+     * back-ordered and no stock moves.
+     */
+    public function markShort(): void
+    {
+        $this->picked = true;
+        $this->from_location_id = null;
+        $this->picked_quantity = 0;
+        $this->short_quantity = (float) $this->quantity;
+        $this->picked_at = now();
+        $this->save();
+    }
+
+    public function isShort(): bool
+    {
+        return (float) $this->short_quantity > 0;
     }
 }

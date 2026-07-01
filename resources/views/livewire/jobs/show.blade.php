@@ -80,9 +80,12 @@ new #[Layout('layouts.app')] class extends Component {
         $pickList = $this->job->pickList;
         if ($pickList && $pickList->status === PickListStatus::Completed && $pickList->destination) {
             foreach ($pickList->items as $item) {
-                if ($item->picked && $item->item) {
+                // Consume what was actually picked onto the truck (a short pick
+                // moved less than the full need; back-ordered qty never arrived).
+                $used = $item->picked_quantity !== null ? (float) $item->picked_quantity : (float) $item->quantity;
+                if ($item->picked && $item->item && $used > 0) {
                     try {
-                        $stock->consume($item->item, $pickList->destination, (float) $item->quantity, auth()->user(), 'Used on '.$this->job->number, $this->job);
+                        $stock->consume($item->item, $pickList->destination, $used, auth()->user(), 'Used on '.$this->job->number, $this->job);
                     } catch (InsufficientStockException) {
                         // Truck doesn't hold enough (manual adjustment elsewhere) — skip.
                     }

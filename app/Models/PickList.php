@@ -73,6 +73,21 @@ class PickList extends Model
         return $this->items->isNotEmpty() && $this->items->every(fn (PickListItem $i) => $i->picked);
     }
 
+    /**
+     * Lines picked short — the remainder is on back-order.
+     *
+     * @return \Illuminate\Support\Collection<int, PickListItem>
+     */
+    public function backorderItems(): \Illuminate\Support\Collection
+    {
+        return $this->items->filter(fn (PickListItem $i) => $i->isShort())->values();
+    }
+
+    public function hasBackorders(): bool
+    {
+        return $this->backorderItems()->isNotEmpty();
+    }
+
     public function markCompleted(): void
     {
         $this->status = PickListStatus::Completed;
