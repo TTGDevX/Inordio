@@ -10,6 +10,7 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
     'legal_name', 'address_line1', 'address_line2', 'city', 'province', 'postal_code',
     'phone', 'email', 'website', 'tax_number', 'payment_terms', 'invoice_footer', 'accent_color', 'logo_path',
     'invoice_prefix', 'invoice_next_number', 'quote_prefix', 'quote_next_number',
+    'mail_host', 'mail_port', 'mail_encryption', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name',
 ])]
 class CompanySetting extends Model
 {
@@ -31,7 +32,17 @@ class CompanySetting extends Model
         return [
             'invoice_next_number' => 'integer',
             'quote_next_number' => 'integer',
+            'mail_port' => 'integer',
+            'mail_password' => 'encrypted', // never stored in plaintext
         ];
+    }
+
+    /**
+     * True when this tenant has configured its own outgoing SMTP server.
+     */
+    public function hasCustomMailer(): bool
+    {
+        return filled($this->mail_host);
     }
 
     /**

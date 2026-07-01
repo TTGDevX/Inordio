@@ -65,8 +65,12 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
 
-        \Illuminate\Support\Facades\Mail::to($this->quote->customer->email)
-            ->send(new \App\Mail\QuoteMail($this->quote, \App\Models\CompanySetting::current()));
+        $company = \App\Models\CompanySetting::current();
+        $mail = \App\Services\TenantMailer::resolve($company);
+
+        \Illuminate\Support\Facades\Mail::mailer($mail['mailer'])
+            ->to($this->quote->customer->email)
+            ->send(new \App\Mail\QuoteMail($this->quote, $company));
 
         $this->statusMessage = 'Quote emailed to '.$this->quote->customer->email;
     }

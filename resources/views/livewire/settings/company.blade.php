@@ -28,6 +28,17 @@ new #[Layout('layouts.app')] class extends Component {
     public int $quote_next_number = 1;
     public ?string $existingLogo = null;
 
+    // Outgoing email (per-tenant SMTP).
+    public string $mail_host = '';
+    public ?int $mail_port = null;
+    public ?string $mail_encryption = null;
+    public string $mail_username = '';
+    public string $mail_password = ''; // blank = keep existing
+    public bool $mailPasswordSet = false;
+    public string $mail_from_address = '';
+    public string $mail_from_name = '';
+    public string $testEmailTo = '';
+
     public $logo = null; // temporary upload
     public string $statusMessage = '';
 
@@ -54,6 +65,15 @@ new #[Layout('layouts.app')] class extends Component {
         $this->quote_prefix = $s->quote_prefix ?? 'Q-';
         $this->quote_next_number = (int) ($s->quote_next_number ?: 1);
         $this->existingLogo = $s->logo_path;
+
+        $this->mail_host = (string) $s->mail_host;
+        $this->mail_port = $s->mail_port;
+        $this->mail_encryption = $s->mail_encryption;
+        $this->mail_username = (string) $s->mail_username;
+        $this->mailPasswordSet = filled($s->mail_password);
+        $this->mail_from_address = (string) $s->mail_from_address;
+        $this->mail_from_name = (string) $s->mail_from_name;
+        $this->testEmailTo = (string) $s->email;
     }
 
     protected function rules(): array
@@ -76,6 +96,13 @@ new #[Layout('layouts.app')] class extends Component {
             'invoice_next_number' => ['required', 'integer', 'min:1'],
             'quote_prefix' => ['nullable', 'string', 'max:12'],
             'quote_next_number' => ['required', 'integer', 'min:1'],
+            'mail_host' => ['nullable', 'string', 'max:255'],
+            'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
+            'mail_encryption' => ['nullable', 'in:tls,ssl'],
+            'mail_username' => ['nullable', 'string', 'max:255'],
+            'mail_password' => ['nullable', 'string', 'max:255'],
+            'mail_from_address' => ['nullable', 'email', 'max:255'],
+            'mail_from_name' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:2048'],
         ];
     }
@@ -83,6 +110,10 @@ new #[Layout('layouts.app')] class extends Component {
     public function save(): void
     {
         abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-settings'), 403);
+
+        if ($this->mail_encryption === '') {
+            $this->mail_encryption = null;
+        }
 
         $data = $this->validate();
         $settings = CompanySetting::current();
@@ -92,11 +123,36 @@ new #[Layout('layouts.app')] class extends Component {
         }
         unset($data['logo']);
 
+        // Blank password means "keep the existing one" — never wipe the secret.
+        if (($data['mail_password'] ?? '') === '') {
+            unset($data['mail_password']);
+        }
+
         $settings->update($data);
 
         $this->logo = null;
         $this->existingLogo = $settings->logo_path;
+        $this->mail_password = '';
+        $this->mailPasswordSet = filled(CompanySetting::current()->mail_password);
         $this->statusMessage = 'Company settings saved.';
+    }
+
+    /**
+     * Send a test message through the tenant's configured mailer. Save first.
+     */
+    public function sendTest(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-settings'), 403);
+        $this->validate(['testEmailTo' => ['required', 'email']]);
+
+        $company = CompanySetting::current();
+        $mail = \App\Services\TenantMailer::resolve($company);
+
+        \Illuminate\Support\Facades\Mail::mailer($mail['mailer'])
+            ->to($this->testEmailTo)
+            ->send(new \App\Mail\TestEmail($company));
+
+        $this->statusMessage = 'Test email sent to '.$this->testEmailTo.'.';
     }
 
     public function with(): array
@@ -232,6 +288,63 @@ new #[Layout('layouts.app')] class extends Component {
                         <x-text-input id="quote_next_number" type="number" min="1" wire:model="quote_next_number" class="block mt-1 w-full" />
                         <x-input-error :messages="$errors->get('quote_next_number')" class="mt-2" />
                     </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4">
+                <h2 class="text-sm font-semibold text-gray-700">Outgoing email (SMTP)</h2>
+                <p class="mt-1 text-xs text-gray-500">Send quotes, invoices and reminders from your own mail server. Leave blank to use the built-in mailer. The password is stored encrypted.</p>
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <x-input-label for="mail_host" value="SMTP host" />
+                        <x-text-input id="mail_host" wire:model="mail_host" class="block mt-1 w-full" placeholder="smtp.your-provider.com" />
+                        <x-input-error :messages="$errors->get('mail_host')" class="mt-2" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <x-input-label for="mail_port" value="Port" />
+                            <x-text-input id="mail_port" type="number" wire:model="mail_port" class="block mt-1 w-full" placeholder="587" />
+                            <x-input-error :messages="$errors->get('mail_port')" class="mt-2" />
+                        </div>
+                        <div>
+                            <x-input-label for="mail_encryption" value="Encryption" />
+                            <select id="mail_encryption" wire:model="mail_encryption"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">None</option>
+                                <option value="tls">TLS</option>
+                                <option value="ssl">SSL</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <x-input-label for="mail_username" value="Username" />
+                        <x-text-input id="mail_username" wire:model="mail_username" class="block mt-1 w-full" autocomplete="off" />
+                    </div>
+                    <div>
+                        <x-input-label for="mail_password" value="Password" />
+                        <x-text-input id="mail_password" type="password" wire:model="mail_password" class="block mt-1 w-full" autocomplete="new-password"
+                            placeholder="{{ $mailPasswordSet ? '•••••••• (unchanged)' : '' }}" />
+                        <x-input-error :messages="$errors->get('mail_password')" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-input-label for="mail_from_name" value="From name" />
+                        <x-text-input id="mail_from_name" wire:model="mail_from_name" class="block mt-1 w-full" placeholder="{{ $legal_name ?: 'Your business' }}" />
+                    </div>
+                    <div>
+                        <x-input-label for="mail_from_address" value="From address" />
+                        <x-text-input id="mail_from_address" type="email" wire:model="mail_from_address" class="block mt-1 w-full" placeholder="billing@your-domain.com" />
+                        <x-input-error :messages="$errors->get('mail_from_address')" class="mt-2" />
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-end gap-3">
+                    <div>
+                        <x-input-label for="testEmailTo" value="Send a test to" />
+                        <x-text-input id="testEmailTo" type="email" wire:model="testEmailTo" class="block mt-1 w-64" />
+                        <x-input-error :messages="$errors->get('testEmailTo')" class="mt-1" />
+                    </div>
+                    <x-secondary-button wire:click="sendTest" type="button">Send test email</x-secondary-button>
+                    <span class="text-xs text-gray-400 self-center">Save your settings before testing.</span>
                 </div>
             </div>
 

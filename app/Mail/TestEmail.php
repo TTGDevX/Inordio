@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use App\Models\CompanySetting;
-use App\Models\Invoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -11,11 +10,11 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class InvoiceMail extends Mailable
+class TestEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Invoice $invoice, public CompanySetting $company, public bool $reminder = false) {}
+    public function __construct(public CompanySetting $company) {}
 
     public function envelope(): Envelope
     {
@@ -25,18 +24,12 @@ class InvoiceMail extends Mailable
 
         return new Envelope(
             from: new Address($fromAddress, $fromName),
-            subject: $this->reminder
-                ? 'Payment reminder: Invoice '.$this->invoice->number
-                : 'Invoice '.$this->invoice->number.' from '.$fromName,
+            subject: 'Inordio test email',
         );
     }
 
     public function content(): Content
     {
-        return new Content(view: 'emails.invoice', with: [
-            'invoice' => $this->invoice,
-            'co' => $this->company,
-            'reminder' => $this->reminder,
-        ]);
+        return new Content(view: 'emails.test', with: ['co' => $this->company]);
     }
 }

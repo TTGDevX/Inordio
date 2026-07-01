@@ -6,6 +6,7 @@ use App\Models\CompanySetting;
 use App\Models\Quote;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -18,9 +19,14 @@ class QuoteMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $from = $this->company->legal_name ?: (tenant('name') ?? config('app.name'));
+        $fromName = $this->company->mail_from_name
+            ?: ($this->company->legal_name ?: (tenant('name') ?? config('app.name')));
+        $fromAddress = $this->company->mail_from_address ?: config('mail.from.address');
 
-        return new Envelope(subject: 'Quote '.$this->quote->number.' from '.$from);
+        return new Envelope(
+            from: new Address($fromAddress, $fromName),
+            subject: 'Quote '.$this->quote->number.' from '.$fromName,
+        );
     }
 
     public function content(): Content

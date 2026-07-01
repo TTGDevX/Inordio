@@ -41,7 +41,10 @@ class SendInvoiceReminders extends Command
                             return;
                         }
 
-                        Mail::to($invoice->customer->email)
+                        $mail = \App\Services\TenantMailer::resolve($company);
+
+                        Mail::mailer($mail['mailer'])
+                            ->to($invoice->customer->email)
                             ->send(new InvoiceMail($invoice, $company, reminder: true));
 
                         $invoice->reminder_sent_at = now();

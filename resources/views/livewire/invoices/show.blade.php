@@ -53,8 +53,12 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
 
-        \Illuminate\Support\Facades\Mail::to($this->invoice->customer->email)
-            ->send(new \App\Mail\InvoiceMail($this->invoice, \App\Models\CompanySetting::current()));
+        $company = \App\Models\CompanySetting::current();
+        $mail = \App\Services\TenantMailer::resolve($company);
+
+        \Illuminate\Support\Facades\Mail::mailer($mail['mailer'])
+            ->to($this->invoice->customer->email)
+            ->send(new \App\Mail\InvoiceMail($this->invoice, $company));
 
         $this->statusMessage = 'Invoice emailed to '.$this->invoice->customer->email;
     }
