@@ -53,7 +53,16 @@ What remains is (A) a handful of build-ready features, (B) things that need an a
 
 ## Suggested build order (build-ready first, since the rest is gated)
 
-Boards → labour/time tracking → GST/HST report → payment receipts → signature capture → server-side PDF → back-orders→reorder → notifications → global search → API writes. Then the gated items as accounts/decisions land, then the hardening block before any external launch.
+Boards → labour/time tracking → GST/HST report → payment receipts → signature capture → server-side PDF → back-orders→reorder → notifications → global search → API writes → document appearance. Then the gated items as accounts/decisions land, then the hardening block before any external launch.
+
+### Status (July 1, 2026): the build-ready column is essentially cleared (292 tests green)
+
+Everything in section A is built EXCEPT the three that need collaboration or are naturally additive:
+- **A2 Camera barcode/QR scanning** — needs a short screenshot loop with Scott to tune the live-camera UX (labels/tokens already exist to scan).
+- **A9 Webhooks** — API *writes* are done; outbound webhooks remain (build-ready, deferred).
+- **A11 More notification types** — "job assigned" is live; overdue-invoice / low-stock types + an email channel can layer on (build-ready, additive).
+
+What genuinely remains is now sections **B (needs an account)**, **C (product decisions)**, and **D (production hardening)** — i.e., work that needs Scott or infrastructure. See those sections.
 
 ---
 

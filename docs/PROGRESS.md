@@ -17,7 +17,7 @@ The full MVP spine from the brief is built and tested: **multi-tenant → invent
 | 4 | Jobs + scheduling + quote→job | ✅ committed |
 | 5 | Invoicing + payments + tax engine | ✅ committed |
 
-Test suite: **252 tests green** (679 assertions) at last run. Tests use **in-memory SQLite**, so they need no MySQL.
+Test suite: **292 tests green** (776 assertions) at last run. Tests use **in-memory SQLite**, so they need no MySQL. (Test `memory_limit` is set to 512M in `phpunit.xml`.)
 
 ### Month-end checkpoint — June 30, 2026
 
