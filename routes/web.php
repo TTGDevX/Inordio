@@ -23,6 +23,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Audit trail (Admin+)
     Volt::route('audit', 'audit.index')->name('audit.index');
 
+    // Checklist / inspection templates (manage-jobs). Static create before wildcard.
+    Volt::route('checklists', 'checklists.index')->name('checklists.index');
+    Volt::route('checklists/create', 'checklists.form')->name('checklists.create');
+    Volt::route('checklists/{checklistTemplateId}/edit', 'checklists.form')->name('checklists.edit');
+
     // Purchase orders. Static "create" before {poId}.
     Volt::route('purchase-orders', 'purchasing.index')->name('purchasing.index');
     Volt::route('purchase-orders/create', 'purchasing.form')->name('purchasing.create');

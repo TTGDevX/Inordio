@@ -47,6 +47,12 @@ new #[Layout('layouts.app')] class extends Component {
                     Schedule
                 </a>
                 @can('manage-jobs')
+                    <a href="{{ route('checklists.index') }}" wire:navigate
+                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                        Checklists
+                    </a>
+                @endcan
+                @can('manage-jobs')
                     <a href="{{ route('jobs.create') }}" wire:navigate
                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
                         New job

@@ -27,7 +27,7 @@ The gaps are mostly **breadth** (features around the core) and **polish/practica
 | **Service Agreements** | ❌ | recurring/contract visits — not started (≈ recurring invoices). |
 | Jobs + Scheduling | ✅ | jobs + a **dispatch board** (jobs by date, Today/Overdue, needs-scheduling, technician filter) built June 2026. A drag-to-reschedule calendar could come later. |
 | **Equipment Tracking (serialized/nested)** | ✅ | **UI built (June 2026):** assets index/register/tree-show, assemble/disassemble/move/retire with event logging + location inheritance. Only camera scan-to-explore remains. |
-| **Checklists / Inspections** | ❌ | not started. |
+| **Checklists / Inspections** | ✅ | built June 2026 — reusable templates snapshotted onto jobs; techs mark pass/fail/N-A + notes; progress & failure tracking. |
 | Invoicing + Payments | 🟡 | full invoicing + **manual** payments; no online collection. |
 | **Expense / Receipt Scanning** | ❌ | Phase 6; needs the AI gateway. |
 | **Sage Integration** | ❌ | Phase 8. |

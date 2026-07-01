@@ -96,6 +96,14 @@ class Job extends Model
         return $this->hasMany(JobNote::class)->latest();
     }
 
+    /**
+     * Inspection/QA checklists attached to this job.
+     */
+    public function checklists(): HasMany
+    {
+        return $this->hasMany(JobChecklist::class)->latest();
+    }
+
     public function subtotal(): float
     {
         return \App\Support\Money::sum($this->lines->map(fn (JobLineItem $line) => $line->lineTotal()));

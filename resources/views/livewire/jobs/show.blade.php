@@ -1,10 +1,14 @@
 <?php
 
+use App\Enums\ChecklistItemStatus;
 use App\Enums\JobStatus;
 use App\Enums\PickListStatus;
 use App\Exceptions\InsufficientStockException;
+use App\Models\ChecklistTemplate;
 use App\Models\Invoice;
 use App\Models\Job;
+use App\Models\JobChecklist;
+use App\Models\JobChecklistItem;
 use App\Models\PickList;
 use App\Models\User;
 use App\Models\JobPhoto;
@@ -27,17 +31,23 @@ new #[Layout('layouts.app')] class extends Component {
 
     public string $newNote = '';
 
-    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoice', 'pickList.items.item', 'pickList.destination', 'photos.uploader', 'noteThread.author'];
+    public ?int $attachTemplateId = null;
+    /** @var array<int, string> checklistItemId => note */
+    public array $checklistNotes = [];
+
+    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoice', 'pickList.items.item', 'pickList.destination', 'photos.uploader', 'noteThread.author', 'checklists.items'];
 
     public function mount(string $jobId): void
     {
         $this->job = Job::with(self::EAGER)->findOrFail($jobId);
         $this->assignUserId = $this->job->assigned_user_id;
+        $this->syncChecklistNotes();
     }
 
     private function reload(): void
     {
         $this->job = Job::with(self::EAGER)->findOrFail($this->job->id);
+        $this->syncChecklistNotes();
     }
 
     public function generatePickList()
@@ -174,6 +184,76 @@ new #[Layout('layouts.app')] class extends Component {
         }
     }
 
+    private function syncChecklistNotes(): void
+    {
+        $this->checklistNotes = [];
+        foreach ($this->job->checklists as $checklist) {
+            foreach ($checklist->items as $item) {
+                $this->checklistNotes[$item->id] = (string) $item->note;
+            }
+        }
+    }
+
+    /**
+     * Attach a checklist to the job by snapshotting a template (manage-jobs).
+     */
+    public function attachChecklist(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
+        $this->validate(['attachTemplateId' => ['required', 'integer', 'exists:checklist_templates,id']]);
+
+        $template = ChecklistTemplate::with('items')->findOrFail($this->attachTemplateId);
+        JobChecklist::fromTemplate($this->job, $template);
+
+        $this->reset('attachTemplateId');
+        $this->reload();
+        $this->statusMessage = 'Checklist added.';
+    }
+
+    /** Techs fill checklists in the field (work-jobs). */
+    public function markChecklistItem(int $itemId, string $status): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('work-jobs'), 403);
+
+        $item = $this->checklistItem($itemId);
+        if ($item) {
+            $item->mark(ChecklistItemStatus::from($status), $this->checklistNotes[$itemId] ?? null);
+            $this->reload();
+        }
+    }
+
+    public function saveChecklistNote(int $itemId): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('work-jobs'), 403);
+
+        $item = $this->checklistItem($itemId);
+        if ($item) {
+            $item->mark($item->status, $this->checklistNotes[$itemId] ?? null);
+            $this->reload();
+            $this->statusMessage = 'Note saved.';
+        }
+    }
+
+    public function removeChecklist(int $checklistId): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
+
+        $checklist = $this->job->checklists()->whereKey($checklistId)->first();
+        if ($checklist) {
+            $checklist->delete();
+            $this->reload();
+            $this->statusMessage = 'Checklist removed.';
+        }
+    }
+
+    /** Resolve a checklist item that belongs to this job (tenant + job scoped). */
+    private function checklistItem(int $itemId): ?JobChecklistItem
+    {
+        return JobChecklistItem::whereKey($itemId)
+            ->whereHas('checklist', fn ($q) => $q->where('job_id', $this->job->id))
+            ->first();
+    }
+
     public function assign(): void
     {
         abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
@@ -185,7 +265,10 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function with(): array
     {
-        return ['technicians' => User::orderBy('name')->get()];
+        return [
+            'technicians' => User::orderBy('name')->get(),
+            'checklistTemplates' => ChecklistTemplate::orderBy('name')->get(),
+        ];
     }
 }; ?>
 
@@ -360,6 +443,81 @@ new #[Layout('layouts.app')] class extends Component {
             @else
                 <p class="mt-3 text-sm text-gray-500">No notes yet.</p>
             @endif
+        </div>
+
+        {{-- Checklists & inspections --}}
+        <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
+            <h2 class="font-medium text-gray-800">Checklists &amp; inspections</h2>
+
+            @can('manage-jobs')
+                <div class="mt-3 flex flex-wrap items-end gap-3">
+                    <select wire:model="attachTemplateId"
+                        class="block w-64 rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">— Choose a template —</option>
+                        @foreach ($checklistTemplates as $template)
+                            <option value="{{ $template->id }}">{{ $template->name }}</option>
+                        @endforeach
+                    </select>
+                    <x-secondary-button wire:click="attachChecklist" type="button">Add checklist</x-secondary-button>
+                    @if ($checklistTemplates->isEmpty())
+                        <a href="{{ route('checklists.index') }}" wire:navigate class="text-sm text-indigo-600 hover:text-indigo-800">Create a template first</a>
+                    @endif
+                </div>
+                <x-input-error :messages="$errors->get('attachTemplateId')" class="mt-1" />
+            @endcan
+
+            @forelse ($job->checklists as $checklist)
+                <div class="mt-4 border-t border-gray-100 pt-4" wire:key="cl-{{ $checklist->id }}">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <p class="font-medium text-gray-900">{{ $checklist->name }}</p>
+                            <span class="text-xs text-gray-500">{{ $checklist->answeredCount() }}/{{ $checklist->items->count() }}</span>
+                            @if ($checklist->isComplete())
+                                <span class="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Complete</span>
+                            @endif
+                            @if ($checklist->hasFailures())
+                                <span class="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Has failures</span>
+                            @endif
+                        </div>
+                        @can('manage-jobs')
+                            <button type="button" wire:click="removeChecklist({{ $checklist->id }})"
+                                wire:confirm="Remove this checklist from the job?"
+                                class="text-xs text-red-600 hover:text-red-800">Remove</button>
+                        @endcan
+                    </div>
+
+                    <ul class="mt-3 space-y-3">
+                        @foreach ($checklist->items as $item)
+                            <li wire:key="cli-{{ $item->id }}" class="rounded-md border border-gray-100 p-3">
+                                <div class="flex items-start justify-between gap-3">
+                                    <p class="text-sm text-gray-900">{{ $item->label }}</p>
+                                    <span class="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $item->status->badgeClasses() }}">{{ $item->status->label() }}</span>
+                                </div>
+                                @can('work-jobs')
+                                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                                        <button type="button" wire:click="markChecklistItem({{ $item->id }}, 'pass')"
+                                            class="rounded px-2 py-1 text-xs font-medium {{ $item->status === \App\Enums\ChecklistItemStatus::Pass ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">Pass</button>
+                                        <button type="button" wire:click="markChecklistItem({{ $item->id }}, 'fail')"
+                                            class="rounded px-2 py-1 text-xs font-medium {{ $item->status === \App\Enums\ChecklistItemStatus::Fail ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">Fail</button>
+                                        <button type="button" wire:click="markChecklistItem({{ $item->id }}, 'na')"
+                                            class="rounded px-2 py-1 text-xs font-medium {{ $item->status === \App\Enums\ChecklistItemStatus::Na ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">N/A</button>
+                                        <input type="text" wire:model="checklistNotes.{{ $item->id }}" placeholder="Note (optional)"
+                                            class="flex-1 min-w-[10rem] rounded-md border-gray-300 shadow-sm text-xs focus:border-indigo-500 focus:ring-indigo-500">
+                                        <button type="button" wire:click="saveChecklistNote({{ $item->id }})"
+                                            class="text-xs text-indigo-600 hover:text-indigo-800">Save</button>
+                                    </div>
+                                @else
+                                    @if ($item->note)
+                                        <p class="mt-1 text-xs text-gray-500">{{ $item->note }}</p>
+                                    @endif
+                                @endcan
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @empty
+                <p class="mt-3 text-sm text-gray-500">No checklists on this job.</p>
+            @endforelse
         </div>
 
         {{-- Status actions: techs work the job; office cancels. --}}
