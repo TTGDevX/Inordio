@@ -60,6 +60,10 @@ new #[Layout('layouts.app')] class extends Component {
                    class="me-2 inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
                     Movement log
                 </a>
+                <a href="{{ route('inventory.labels') }}" target="_blank"
+                   class="me-2 inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                    Print labels
+                </a>
                 <a href="{{ route('exports.inventory') }}"
                    class="me-2 inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
                     Export CSV

@@ -43,12 +43,12 @@ Added beyond the brief this build: ops dashboard, **printable PDF quotes/invoice
 
 The engine is built, but several spec'd pieces are missing and they're what make the differentiator *feel* complete:
 
-- **QR label generation** ❌ — brief wants Inordio to *generate* QR labels for items, bins, trucks, serialized assets, and pick lists. Not built.
-- **Camera barcode/QR scanning** ❌ — scan-to-pick, scan-to-receive, auto-deduct. Not built (top of build-ready roadmap).
-- **Serialized-asset UI** ❌ — tree view, scan-to-explore (walk up/down), record assemble/disassemble. Only the data layer exists.
-- **Item photos** ❌ — `photo_path` column exists but there's **no upload UI**.
+- **QR label generation** ✅ (June 2026) — printable QR label sheets for items, bins/trucks, and serialized assets; encodes `INV:`/`AST:`/`LOC:` tokens for the scanner. (Pick-list label sheets could be added later.)
+- **Camera barcode/QR scanning** ❌ — scan-to-pick, scan-to-receive, auto-deduct. Not built (top of build-ready roadmap; labels now exist to scan).
+- **Serialized-asset UI** ✅ (June 2026) — tree view, assemble/disassemble/move/retire with event history. Scan-to-explore pending the scanner.
+- **Item photos** ✅ (June 2026) — upload/replace/remove on the item page + thumbnails on the list.
 - **Back-order tracking / short-pick flagging** ❌ — pick list doesn't handle "item unavailable."
-- **Movement history UI** ❌ — `stock_movements` is recorded but never surfaced to the user.
+- **Movement history UI** ✅ (June 2026) — global movement log + per-item recent-movements panel.
 - **Low-stock alerts** 🟡 — dashboard shows low-stock count/list; no real notifications, and minimums are per-location (brief said per-item — confirm which you want).
 
 ---

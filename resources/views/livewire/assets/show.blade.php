@@ -109,6 +109,8 @@ new #[Layout('layouts.app')] class extends Component {
                class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">&larr; Back to assets</a>
             @can('manage-inventory')
                 <div class="flex items-center gap-4">
+                    <a href="{{ route('assets.label', $asset->id) }}" target="_blank"
+                       class="text-sm text-indigo-600 hover:text-indigo-800">Label</a>
                     <a href="{{ route('assets.edit', $asset->id) }}" wire:navigate
                        class="text-sm text-indigo-600 hover:text-indigo-800">Edit</a>
                     @if ($asset->status !== \App\Enums\AssetStatus::Retired)

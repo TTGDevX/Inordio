@@ -64,6 +64,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Locations
     Volt::route('locations', 'locations.index')->name('locations.index');
+    // Printable QR labels for bins/trucks/warehouses (scanned by the app).
+    Route::get('locations/labels', function () {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $labels = \App\Models\Location::where('is_active', true)->orderBy('name')->get()
+            ->map(fn ($l) => ['payload' => 'LOC:'.$l->id, 'title' => $l->name, 'subtitle' => $l->type->label()])
+            ->all();
+
+        return view('print.labels', ['heading' => 'Location labels', 'labels' => $labels]);
+    })->name('locations.labels');
 
     // Stock movement log (the ledger, surfaced)
     Volt::route('movements', 'movements.index')->name('movements.index');
@@ -74,6 +84,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('assets', 'assets.index')->name('assets.index');
     Volt::route('assets/create', 'assets.form')->name('assets.create');
     Volt::route('assets/{assetId}/edit', 'assets.form')->name('assets.edit');
+    Route::get('assets/{assetId}/label', function (string $assetId) {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $asset = \App\Models\SerializedAsset::with('item')->findOrFail($assetId);
+
+        return view('print.labels', ['heading' => 'Label — '.$asset->serial_number, 'labels' => [
+            ['payload' => 'AST:'.$asset->serial_number, 'title' => $asset->serial_number, 'subtitle' => $asset->item?->name],
+        ]]);
+    })->name('assets.label');
     Volt::route('assets/{assetId}', 'assets.show')->name('assets.show');
 
     // Customers. Static "create" before the {customerId} wildcard; param is
@@ -99,9 +118,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('inventory', 'inventory.index')->name('inventory.index');
     // Low-stock reorder view (static — must precede the {itemId} wildcard).
     Volt::route('inventory/reorder', 'inventory.reorder')->name('inventory.reorder');
+    // Printable QR label sheet for all active items (static — before {itemId}).
+    Route::get('inventory/labels', function () {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $labels = \App\Models\InventoryItem::where('is_active', true)->orderBy('name')->get()
+            ->map(fn ($i) => ['payload' => 'INV:'.$i->internal_sku, 'title' => $i->name, 'subtitle' => $i->internal_sku])
+            ->all();
+
+        return view('print.labels', ['heading' => 'Item labels', 'labels' => $labels]);
+    })->name('inventory.labels');
     // create + edit share one form component (mount receives an optional id).
     Volt::route('inventory/create', 'inventory.form')->name('inventory.create');
     Volt::route('inventory/{itemId}/edit', 'inventory.form')->name('inventory.edit');
+    Route::get('inventory/{itemId}/label', function (string $itemId) {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        $item = \App\Models\InventoryItem::findOrFail($itemId);
+
+        return view('print.labels', ['heading' => 'Label — '.$item->name, 'labels' => [
+            ['payload' => 'INV:'.$item->internal_sku, 'title' => $item->name, 'subtitle' => $item->internal_sku],
+        ]]);
+    })->name('inventory.label');
     // Param name is deliberately NOT "item": a name that collides with the
     // component's InventoryItem property triggers Livewire route-model binding
     // (which would also bypass the tenant scope). Passing a plain {itemId}

@@ -90,9 +90,17 @@ new #[Layout('layouts.app')] class extends Component {
 
         <div class="flex items-center justify-between">
             <h1 class="text-xl font-semibold text-gray-800">Locations</h1>
-            @can('manage-locations')
-                <x-primary-button wire:click="newLocation" type="button">Add location</x-primary-button>
-            @endcan
+            <div class="flex items-center gap-3">
+                @can('manage-inventory')
+                    <a href="{{ route('locations.labels') }}" target="_blank"
+                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                        Print labels
+                    </a>
+                @endcan
+                @can('manage-locations')
+                    <x-primary-button wire:click="newLocation" type="button">Add location</x-primary-button>
+                @endcan
+            </div>
         </div>
 
         @if ($showForm)
