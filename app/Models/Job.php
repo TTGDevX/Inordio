@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InvoiceStatus;
 use App\Enums\JobStatus;
 use Database\Factories\JobFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -64,11 +65,40 @@ class Job extends Model
     }
 
     /**
-     * The invoice raised from this job, if any (one per job for now).
+     * The first invoice raised from this job (kept for the simple single-invoice
+     * flow). A job may have several when staged/progress-billed — see invoices().
      */
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * All invoices raised from this job (deposit / progress / final billing).
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class)->latest();
+    }
+
+    /**
+     * Pre-tax amount already billed across non-void invoices for this job.
+     */
+    public function amountInvoiced(): float
+    {
+        return \App\Support\Money::sum(
+            $this->invoices
+                ->reject(fn (Invoice $i) => $i->status === InvoiceStatus::Void)
+                ->map(fn (Invoice $i) => $i->subtotal())
+        );
+    }
+
+    /**
+     * Pre-tax amount of the job not yet billed (job subtotal − already billed).
+     */
+    public function amountRemaining(): float
+    {
+        return \App\Support\Money::round($this->subtotal() - $this->amountInvoiced());
     }
 
     /**

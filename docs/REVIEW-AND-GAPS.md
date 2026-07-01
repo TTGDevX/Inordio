@@ -74,7 +74,7 @@ You specifically want IN-style templating of the documents and emails. Concretel
 2. **Money as integer cents** (high, do before real $ flows) — totals are stored as decimals and computed with floats; we already saw float rounding in the QST test. Standard practice is integer cents (or a money cast) to avoid penny drift on invoices. Worth fixing while the data is still small.
 3. **Soft deletes / no hard-delete of financial records** (medium) — invoices/payments/jobs should archive, not vanish. We have `void` for invoices; extend the pattern and add soft deletes.
 4. **Job photos & notes** (medium) — legacy map had `JobPhoto`/`JobNote`; techs documenting work with photos is a real trades need and a nice differentiator vs. plain invoicing tools.
-5. **Deposits / progress billing** (medium) — trades often take a deposit up front; invoices may need partial/deposit billing, not just one final invoice.
+5. **Deposits / progress billing** ✅ (June 2026) — jobs can be billed in stages (deposit / progress / final) via `Invoice::forJobAmount`, capped at the uninvoiced balance, each a real tax-snapshotted invoice.
 6. **In-app + email notifications** (medium) — low stock, overdue invoice, job assigned-to-me.
 7. **Configurable per-tenant invoice/quote numbering** (low-med) — prefixes/sequences instead of a global `INV-#####`.
 8. **CSV export** (low-med) — accountant/Sage handoff before the full Sage integration lands.

@@ -130,6 +130,44 @@ class Invoice extends Model
         return $invoice;
     }
 
+    /**
+     * Raise a partial invoice for a job — a deposit or progress payment — as a
+     * single custom line for $amount, with tax snapshotted like fromJob().
+     * Used for staged / progress billing (multiple invoices per job).
+     */
+    public static function forJobAmount(Job $job, float $amount, string $label): self
+    {
+        $customer = $job->customer;
+
+        $invoice = static::create([
+            'customer_id' => $job->customer_id,
+            'job_id' => $job->id,
+            'status' => InvoiceStatus::Draft,
+            'province' => $customer->province?->value,
+            'tax_exempt' => $customer->tax_exempt,
+            'issued_at' => now()->toDateString(),
+            'due_at' => now()->addDays(15)->toDateString(),
+        ]);
+
+        $invoice->lines()->create([
+            'inventory_item_id' => null,
+            'description' => $label,
+            'quantity' => 1,
+            'unit_price' => \App\Support\Money::round($amount),
+            'position' => 0,
+        ]);
+
+        $invoice->load('lines');
+        $tax = app(TaxCalculator::class)->calculate($customer->province, $invoice->subtotal(), $customer->tax_exempt);
+
+        $invoice->forceFill([
+            'tax_total' => $tax['total'],
+            'tax_breakdown' => $tax['lines'],
+        ])->save();
+
+        return $invoice;
+    }
+
     public function markSent(): void
     {
         $this->status = InvoiceStatus::Sent;

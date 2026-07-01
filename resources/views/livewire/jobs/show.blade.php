@@ -35,7 +35,10 @@ new #[Layout('layouts.app')] class extends Component {
     /** @var array<int, string> checklistItemId => note */
     public array $checklistNotes = [];
 
-    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoice', 'pickList.items.item', 'pickList.destination', 'photos.uploader', 'noteThread.author', 'checklists.items'];
+    public ?string $billAmount = null;
+    public string $billLabel = 'Deposit';
+
+    private const EAGER = ['customer', 'quote', 'assignedUser', 'lines.item', 'invoices.lines', 'invoices.payments', 'pickList.items.item', 'pickList.destination', 'photos.uploader', 'noteThread.author', 'checklists.items'];
 
     public function mount(string $jobId): void
     {
@@ -60,13 +63,61 @@ new #[Layout('layouts.app')] class extends Component {
     }
 
     /**
-     * Raise an invoice from this job (idempotent — one invoice per job).
+     * Raise a single full, itemised invoice from the job (the simple flow).
+     * Only when nothing has been billed yet; staged billing uses bill()/billRemaining().
      */
     public function createInvoice()
     {
         abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-invoices'), 403);
 
-        $invoice = $this->job->invoice ?: Invoice::fromJob($this->job);
+        if ($this->job->invoices()->exists()) {
+            return null;
+        }
+
+        $invoice = Invoice::fromJob($this->job);
+
+        return $this->redirect(route('invoices.show', $invoice->id), navigate: true);
+    }
+
+    /**
+     * Raise a deposit / progress invoice for a portion of the job. The amount
+     * can't exceed the uninvoiced balance.
+     */
+    public function bill()
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-invoices'), 403);
+        $this->validate([
+            'billAmount' => ['required', 'numeric', 'min:0.01'],
+            'billLabel' => ['required', 'string', 'max:255'],
+        ]);
+
+        $amount = \App\Support\Money::round((float) $this->billAmount);
+        $remaining = $this->job->amountRemaining();
+
+        if ($amount > $remaining + 0.001) {
+            $this->addError('billAmount', 'Amount exceeds the uninvoiced balance ($'.number_format($remaining, 2).').');
+
+            return null;
+        }
+
+        $invoice = Invoice::forJobAmount($this->job, $amount, $this->billLabel ?: 'Progress payment');
+
+        return $this->redirect(route('invoices.show', $invoice->id), navigate: true);
+    }
+
+    /**
+     * Bill everything not yet invoiced as one final invoice.
+     */
+    public function billRemaining()
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-invoices'), 403);
+
+        $remaining = $this->job->amountRemaining();
+        if ($remaining <= 0) {
+            return null;
+        }
+
+        $invoice = Invoice::forJobAmount($this->job, $remaining, 'Final payment');
 
         return $this->redirect(route('invoices.show', $invoice->id), navigate: true);
     }
@@ -555,18 +606,59 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
         @endif
 
-        {{-- Invoicing --}}
-        @if ($job->status === JobStatus::Done || $job->invoice)
-            <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6 flex items-center gap-3">
-                @if ($job->invoice)
-                    <span class="text-sm text-gray-600">Invoiced</span>
-                    <a href="{{ route('invoices.show', $job->invoice->id) }}" wire:navigate
-                       class="text-sm font-mono text-indigo-600 hover:text-indigo-800">{{ $job->invoice->number }}</a>
-                @else
-                    @can('manage-invoices')
-                        <x-primary-button wire:click="createInvoice" type="button">Create invoice</x-primary-button>
-                    @endcan
+        {{-- Invoicing (supports deposit / progress / final staged billing) --}}
+        @if ($job->status === JobStatus::Done || $job->invoices->isNotEmpty())
+            @php($invoiced = $job->amountInvoiced())
+            @php($remaining = $job->amountRemaining())
+            <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-medium text-gray-800">Invoicing</h2>
+                    <p class="text-sm text-gray-500 tabular-nums">
+                        Billed ${{ number_format($invoiced, 2) }} of ${{ number_format($job->subtotal(), 2) }}
+                        · <span class="{{ $remaining > 0 ? 'text-amber-700' : 'text-green-700' }}">${{ number_format(max(0, $remaining), 2) }} left</span>
+                    </p>
+                </div>
+
+                @if ($job->invoices->isNotEmpty())
+                    <ul class="divide-y divide-gray-100 border border-gray-100 rounded-md">
+                        @foreach ($job->invoices as $inv)
+                            <li wire:key="inv-{{ $inv->id }}" class="flex items-center justify-between px-4 py-2 text-sm">
+                                <a href="{{ route('invoices.show', $inv->id) }}" wire:navigate class="font-mono text-indigo-600 hover:text-indigo-800">{{ $inv->number }}</a>
+                                <span class="text-gray-500">{{ $inv->lines->first()?->description }}</span>
+                                <span class="tabular-nums text-gray-900">${{ number_format($inv->total(), 2) }}</span>
+                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $inv->status->badgeClasses() }}">{{ $inv->status->label() }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
                 @endif
+
+                @can('manage-invoices')
+                    @if ($remaining > 0)
+                        <div class="flex flex-wrap items-end gap-3">
+                            @if ($invoiced == 0)
+                                <x-primary-button wire:click="createInvoice" type="button">Create full invoice</x-primary-button>
+                                <span class="text-xs text-gray-400 self-center">or bill in stages:</span>
+                            @endif
+                            <div>
+                                <label class="block text-xs text-gray-500">Label</label>
+                                <input type="text" wire:model="billLabel"
+                                    class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500">Amount (pre-tax)</label>
+                                <input type="number" step="0.01" min="0.01" max="{{ $remaining }}" wire:model="billAmount"
+                                    placeholder="{{ number_format($remaining, 2, '.', '') }}"
+                                    class="mt-1 block w-32 rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <x-secondary-button wire:click="bill" type="button">Bill amount</x-secondary-button>
+                            <x-secondary-button wire:click="billRemaining" type="button">Bill remaining</x-secondary-button>
+                        </div>
+                        <x-input-error :messages="$errors->get('billAmount')" class="mt-1" />
+                        <x-input-error :messages="$errors->get('billLabel')" class="mt-1" />
+                    @else
+                        <p class="text-sm text-green-700">Fully invoiced.</p>
+                    @endif
+                @endcan
             </div>
         @endif
 
