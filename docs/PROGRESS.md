@@ -55,6 +55,7 @@ All models use the `BelongsToTenant` trait (stancl/tenancy) and carry a `tenant_
 - **Customer statements**: `print/statement.blade.php` + `customers/{customerId}/statement` route (gated `manage-customers`), branded letterhead, table of invoices with balance owing. "Statement" link on the customer page.
 - **Job photos**: `job_photos` table + `JobPhoto` model (`BelongsToTenant`, `url()`), `Job::photos()`. `jobs/show` uses `WithFileUploads` — techs (`work-jobs`) attach a captured/uploaded photo with optional caption (stored at `job-photos/{tenant}` on the public disk); office (`manage-jobs`) can remove. Mobile-friendly `capture="environment"` file input. Needs `php artisan storage:link` once (already done for the logo).
 - **Audit viewer**: `audit/index` Volt page (route `audit`, gated `view-audit` = Admin+), reads the existing `audit_logs` (written by the `Auditable` trait). Paginated 50/page, `#[Url]` filters by record type + action, badge per action, compact changed-fields summary. Linked from the account dropdown ("Audit trail"). No schema change.
+- **Customer archive/restore**: uses the existing `customers.is_active` flag. `customers/show` has an Archive/Restore action (`toggleArchive`, `manage-customers`) + archived banner; `customers/index` filters to active by default with a `#[Url] archived` "Show archived" toggle. Nothing is deleted. No schema change. *Pattern to replicate for inventory items next.*
 
 ---
 

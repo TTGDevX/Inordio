@@ -6,6 +6,7 @@ use Livewire\Volt\Component;
 
 new #[Layout('layouts.app')] class extends Component {
     public Customer $customer;
+    public string $statusMessage = '';
 
     /**
      * Resolved here (not via implicit binding) so the BelongsToTenant scope is
@@ -14,6 +15,18 @@ new #[Layout('layouts.app')] class extends Component {
     public function mount(string $customerId): void
     {
         $this->customer = Customer::findOrFail($customerId);
+    }
+
+    /**
+     * Archive (soft-hide) or restore. Nothing is deleted — the record just
+     * drops out of the default lists. Office+ only.
+     */
+    public function toggleArchive(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-customers'), 403);
+
+        $this->customer->update(['is_active' => ! $this->customer->is_active]);
+        $this->statusMessage = $this->customer->is_active ? 'Customer restored.' : 'Customer archived.';
     }
 }; ?>
 
@@ -29,9 +42,22 @@ new #[Layout('layouts.app')] class extends Component {
                        class="text-sm text-indigo-600 hover:text-indigo-800">Statement</a>
                     <a href="{{ route('customers.edit', $customer->id) }}" wire:navigate
                        class="text-sm text-indigo-600 hover:text-indigo-800">Edit customer</a>
+                    <button type="button" wire:click="toggleArchive"
+                        wire:confirm="{{ $customer->is_active ? 'Archive this customer?' : 'Restore this customer?' }}"
+                        class="text-sm {{ $customer->is_active ? 'text-gray-500 hover:text-gray-700' : 'text-green-600 hover:text-green-800' }}">
+                        {{ $customer->is_active ? 'Archive' : 'Restore' }}
+                    </button>
                 </div>
             @endcan
         </div>
+
+        @if ($statusMessage)
+            <div class="rounded-md bg-green-50 px-4 py-3 text-sm text-green-800">{{ $statusMessage }}</div>
+        @endif
+
+        @unless ($customer->is_active)
+            <div class="rounded-md bg-gray-100 px-4 py-3 text-sm text-gray-600">This customer is archived — hidden from the default list.</div>
+        @endunless
 
         <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
             <div class="flex items-start justify-between gap-3">
