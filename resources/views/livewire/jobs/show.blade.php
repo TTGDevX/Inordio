@@ -240,6 +240,64 @@ new #[Layout('layouts.app')] class extends Component {
         }
     }
 
+    public string $signerName = '';
+
+    /**
+     * Save a customer sign-off: a PNG data URL drawn on-site plus the signer's
+     * name, stamped with the time. Techs capture it (work-jobs).
+     */
+    public function saveSignature(string $signature): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('work-jobs'), 403);
+        $this->validate(['signerName' => ['required', 'string', 'max:255']]);
+
+        $prefix = 'data:image/png;base64,';
+        if (! str_starts_with($signature, $prefix)) {
+            $this->addError('signature', 'Please capture a signature before saving.');
+
+            return;
+        }
+
+        $binary = base64_decode(substr($signature, strlen($prefix)), true);
+        if ($binary === false || $binary === '') {
+            $this->addError('signature', 'The signature could not be read.');
+
+            return;
+        }
+
+        $old = $this->job->signature_path;
+        $path = 'signatures/'.tenant('id').'/'.$this->job->id.'-'.uniqid().'.png';
+        \Illuminate\Support\Facades\Storage::disk('public')->put($path, $binary);
+
+        $this->job->signature_path = $path;
+        $this->job->signed_by_name = $this->signerName;
+        $this->job->signed_at = now();
+        $this->job->save();
+
+        if ($old) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($old);
+        }
+
+        $this->reset('signerName');
+        $this->reload();
+        $this->statusMessage = 'Sign-off saved.';
+    }
+
+    public function clearSignature(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-jobs'), 403);
+
+        if ($this->job->signature_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->job->signature_path);
+            $this->job->signature_path = null;
+            $this->job->signed_by_name = null;
+            $this->job->signed_at = null;
+            $this->job->save();
+            $this->reload();
+            $this->statusMessage = 'Sign-off cleared.';
+        }
+    }
+
     /** Log billable labour hours on the job (techs — work-jobs). */
     public function addTimeEntry(): void
     {
@@ -499,6 +557,55 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                 </div>
             @endcan
+        </div>
+
+        {{-- Customer sign-off: capture a signature on-site at completion --}}
+        <div class="bg-white rounded-lg shadow-sm p-5 sm:p-6">
+            <h2 class="font-medium text-gray-800">Customer sign-off</h2>
+
+            @if ($job->signature_path)
+                <div class="mt-3">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($job->signature_path) }}"
+                         alt="Customer signature" class="h-24 rounded-md border border-gray-100 bg-white">
+                    <p class="mt-2 text-sm text-gray-600">Signed by <span class="font-medium">{{ $job->signed_by_name }}</span>
+                        · {{ $job->signed_at?->format('M j, Y g:i A') }}</p>
+                    @can('manage-jobs')
+                        <button type="button" wire:click="clearSignature" wire:confirm="Remove the customer sign-off?"
+                            class="mt-2 text-xs text-red-600 hover:text-red-800">Clear sign-off</button>
+                    @endcan
+                </div>
+            @else
+                @can('work-jobs')
+                    <div class="mt-3 space-y-3"
+                         x-data="{
+                            drawing:false, ctx:null, empty:true,
+                            pos(e){ const c=$refs.pad, r=c.getBoundingClientRect(), t=e.touches?e.touches[0]:e; return {x:t.clientX-r.left, y:t.clientY-r.top}; },
+                            start(e){ this.drawing=true; this.empty=false; const p=this.pos(e); this.ctx.beginPath(); this.ctx.moveTo(p.x,p.y); },
+                            move(e){ if(!this.drawing) return; const p=this.pos(e); this.ctx.lineTo(p.x,p.y); this.ctx.stroke(); },
+                            end(){ this.drawing=false; },
+                            clearPad(){ this.ctx.clearRect(0,0,$refs.pad.width,$refs.pad.height); this.empty=true; },
+                            save(){ if(this.empty) return; $wire.saveSignature($refs.pad.toDataURL('image/png')); this.clearPad(); }
+                         }"
+                         x-init="ctx=$refs.pad.getContext('2d'); ctx.lineWidth=2; ctx.lineCap='round'; ctx.strokeStyle='#111827';">
+                        <div>
+                            <x-input-label for="signerName" value="Signed by (customer name)" />
+                            <x-text-input id="signerName" wire:model="signerName" class="block mt-1 w-72" />
+                            <x-input-error :messages="$errors->get('signerName')" class="mt-1" />
+                        </div>
+                        <div wire:ignore class="inline-block rounded-md border border-gray-300 bg-white">
+                            <canvas x-ref="pad" width="480" height="160" style="touch-action:none; width:100%; max-width:480px; height:160px;"
+                                @pointerdown="start($event)" @pointermove="move($event)" @pointerup="end()" @pointerleave="end()"></canvas>
+                        </div>
+                        <x-input-error :messages="$errors->get('signature')" class="mt-1" />
+                        <div class="flex items-center gap-3">
+                            <x-secondary-button type="button" @click="save()">Save sign-off</x-secondary-button>
+                            <button type="button" @click="clearPad()" class="text-sm text-gray-500 hover:text-gray-700">Clear</button>
+                        </div>
+                    </div>
+                @else
+                    <p class="mt-2 text-sm text-gray-500">Not signed yet.</p>
+                @endcan
+            @endif
         </div>
 
         {{-- Labour & time: techs log billable hours; they flow onto the invoice --}}

@@ -30,6 +30,7 @@ class Job extends Model
             'scheduled_at' => 'datetime',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'signed_at' => 'datetime',
         ];
     }
 

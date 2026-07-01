@@ -17,7 +17,7 @@ What remains is (A) a handful of build-ready features, (B) things that need an a
 3. **Labour / time tracking on jobs** — techs log hours; hours become invoice lines. **✅ built** (per-entry hours×rate on the job, flows onto the invoice; default rate in Company Settings).
 4. **GST/HST collected report** — tax-period summary of tax collected for filing. **✅ built** (date-filtered "Tax collected" section on Reports, grouped by component from invoice snapshots).
 5. **Payment receipt emails** — email a receipt when a payment is recorded. **✅ built** (opt-in checkbox on the payment form; editable `payment_receipt` template).
-6. **Customer sign-off / signature capture** — customer signs on job completion; attaches to the job. Pairs with checklists.
+6. **Customer sign-off / signature capture** — customer signs on job completion; attaches to the job. **✅ built** (on-screen signature canvas → stored image + signer name + time on the job).
 7. **Server-side PDF (DomPDF)** — attach real PDF invoices/quotes to emails (today it's browser-print only; emails summarize but don't attach).
 8. **Back-orders feed the reorder view** — short-picked shortfalls surface as suggested reorders.
 9. **API writes + webhooks** — the JSON API is read-only in v1; add POST/PATCH and outbound webhooks.
