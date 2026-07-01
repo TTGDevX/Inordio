@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\JobStatus;
+use App\Models\PickListItem;
 use App\Models\StockLevel;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -22,7 +24,23 @@ new #[Layout('layouts.app')] class extends Component {
             ->sortBy(fn (StockLevel $l) => $l->item?->name)
             ->groupBy(fn (StockLevel $l) => $l->item?->preferredSupplierName() ?? 'No preferred supplier');
 
-        return ['groups' => $groups];
+        // Outstanding back-orders: short-picked lines on jobs that are still open.
+        $backorders = PickListItem::query()
+            ->where('short_quantity', '>', 0)
+            ->with(['item', 'pickList.job'])
+            ->get()
+            ->filter(fn (PickListItem $i) => $i->pickList?->job
+                && ! in_array($i->pickList->job->status, [JobStatus::Done, JobStatus::Cancelled], true))
+            ->groupBy('inventory_item_id')
+            ->map(fn ($lines) => [
+                'name' => $lines->first()->item?->name ?? $lines->first()->description,
+                'short' => (float) $lines->sum(fn (PickListItem $l) => (float) $l->short_quantity),
+                'jobs' => $lines->map(fn (PickListItem $l) => $l->pickList->job->number)->unique()->values(),
+            ])
+            ->sortBy('name')
+            ->values();
+
+        return ['groups' => $groups, 'backorders' => $backorders];
     }
 }; ?>
 
@@ -41,6 +59,32 @@ new #[Layout('layouts.app')] class extends Component {
                 @endcan
             </div>
         </div>
+
+        @if ($backorders->isNotEmpty())
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="px-5 py-3 border-b border-gray-100 bg-amber-50">
+                    <h2 class="font-medium text-gray-800">Back-ordered from picks <span class="text-xs text-amber-700">· short on open jobs</span></h2>
+                </div>
+                <table class="min-w-full divide-y divide-gray-100 text-sm">
+                    <thead class="bg-white text-left text-xs font-medium text-gray-500 uppercase">
+                        <tr>
+                            <th class="px-5 py-2">Item</th>
+                            <th class="px-5 py-2">Needed for</th>
+                            <th class="px-5 py-2 text-right">Back-ordered</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($backorders as $b)
+                            <tr wire:key="bo-{{ $loop->index }}">
+                                <td class="px-5 py-2 text-gray-900">{{ $b['name'] }}</td>
+                                <td class="px-5 py-2 text-gray-500 font-mono text-xs">{{ $b['jobs']->implode(', ') }}</td>
+                                <td class="px-5 py-2 text-right tabular-nums font-medium text-amber-700">{{ rtrim(rtrim(number_format($b['short'], 2), '0'), '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
 
         @forelse ($groups as $supplier => $levels)
             <div class="bg-white rounded-lg shadow-sm overflow-hidden">

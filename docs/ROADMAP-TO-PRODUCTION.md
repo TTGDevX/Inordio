@@ -19,7 +19,7 @@ What remains is (A) a handful of build-ready features, (B) things that need an a
 5. **Payment receipt emails** — email a receipt when a payment is recorded. **✅ built** (opt-in checkbox on the payment form; editable `payment_receipt` template).
 6. **Customer sign-off / signature capture** — customer signs on job completion; attaches to the job. **✅ built** (on-screen signature canvas → stored image + signer name + time on the job).
 7. **Server-side PDF (DomPDF)** — attach real PDF invoices/quotes to emails. **✅ built** (guarded by `class_exists`; run `composer require barryvdh/laravel-dompdf` on the host to activate the attachment).
-8. **Back-orders feed the reorder view** — short-picked shortfalls surface as suggested reorders.
+8. **Back-orders feed the reorder view** — short-picked shortfalls surface as suggested reorders. **✅ built** ("Back-ordered from picks" section on Reorder, open jobs only).
 9. **API writes + webhooks** — the JSON API is read-only in v1; add POST/PATCH and outbound webhooks.
 10. **User-editable print/PDF templates** — email templates are editable; document templates are still fixed Blade.
 11. **In-app / email notifications** — "job assigned to me", "invoice overdue", "stock low".
