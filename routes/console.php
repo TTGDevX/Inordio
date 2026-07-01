@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Daily overdue-invoice reminders (runs when `php artisan schedule:work` is active).
 Schedule::command('invoices:send-reminders')->dailyAt('08:00');
+
+// Daily: spawn scheduled jobs for due service agreements.
+Schedule::command('agreements:run')->dailyAt('06:00');

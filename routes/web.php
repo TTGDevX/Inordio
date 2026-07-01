@@ -28,6 +28,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Volt::route('checklists/create', 'checklists.form')->name('checklists.create');
     Volt::route('checklists/{checklistTemplateId}/edit', 'checklists.form')->name('checklists.edit');
 
+    // Service agreements (recurring maintenance). Static create before wildcard.
+    Volt::route('agreements', 'agreements.index')->name('agreements.index');
+    Volt::route('agreements/create', 'agreements.form')->name('agreements.create');
+    Volt::route('agreements/{serviceAgreementId}/edit', 'agreements.form')->name('agreements.edit');
+
     // Purchase orders. Static "create" before {poId}.
     Volt::route('purchase-orders', 'purchasing.index')->name('purchasing.index');
     Volt::route('purchase-orders/create', 'purchasing.form')->name('purchasing.create');

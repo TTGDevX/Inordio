@@ -51,6 +51,10 @@ new #[Layout('layouts.app')] class extends Component {
                        class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
                         Checklists
                     </a>
+                    <a href="{{ route('agreements.index') }}" wire:navigate
+                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                        Agreements
+                    </a>
                 @endcan
                 @can('manage-jobs')
                     <a href="{{ route('jobs.create') }}" wire:navigate

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
-#[Fillable(['customer_id', 'quote_id', 'assigned_user_id', 'number', 'title', 'status', 'scheduled_at', 'notes'])]
+#[Fillable(['customer_id', 'quote_id', 'service_agreement_id', 'assigned_user_id', 'number', 'title', 'status', 'scheduled_at', 'notes'])]
 class Job extends Model
 {
     /** @use HasFactory<JobFactory> */
@@ -52,6 +52,11 @@ class Job extends Model
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class);
+    }
+
+    public function serviceAgreement(): BelongsTo
+    {
+        return $this->belongsTo(ServiceAgreement::class);
     }
 
     public function assignedUser(): BelongsTo

@@ -24,7 +24,7 @@ The gaps are mostly **breadth** (features around the core) and **polish/practica
 | **Purchase Orders** | ❌ | receiving is manual (`StockManager::receive`); no PO/receipt entity. Legacy map had Supplier→PO→POLineItem/POReceipt. |
 | Customers | ✅ | |
 | Quotes + Approvals | ✅ | |
-| **Service Agreements** | ❌ | recurring/contract visits — not started (≈ recurring invoices). |
+| **Service Agreements** | ✅ | built June 2026 — recurring maintenance spawns scheduled jobs on a cadence (`agreements:run`), copies a line template, advances the schedule. Recurring *invoices* specifically could layer on later. |
 | Jobs + Scheduling | ✅ | jobs + a **dispatch board** (jobs by date, Today/Overdue, needs-scheduling, technician filter) built June 2026. A drag-to-reschedule calendar could come later. |
 | **Equipment Tracking (serialized/nested)** | ✅ | **UI built (June 2026):** assets index/register/tree-show, assemble/disassemble/move/retire with event logging + location inheritance. Only camera scan-to-explore remains. |
 | **Checklists / Inspections** | ✅ | built June 2026 — reusable templates snapshotted onto jobs; techs mark pass/fail/N-A + notes; progress & failure tracking. |
