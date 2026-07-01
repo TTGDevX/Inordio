@@ -17,7 +17,7 @@ The full MVP spine from the brief is built and tested: **multi-tenant → invent
 | 4 | Jobs + scheduling + quote→job | ✅ committed |
 | 5 | Invoicing + payments + tax engine | ✅ committed |
 
-Test suite: **232 tests green** (633 assertions) at last run. Tests use **in-memory SQLite**, so they need no MySQL.
+Test suite: **252 tests green** (679 assertions) at last run. Tests use **in-memory SQLite**, so they need no MySQL.
 
 ### Month-end checkpoint — June 30, 2026
 
@@ -32,9 +32,9 @@ Brief scorecard rows flipped to ✅ since the original review: **Equipment track
 
 ### July 1, 2026 update — more gaps closed
 
-Since the month-end checkpoint: **QR label generation** (items/assets/locations, scanner-ready tokens), **short-pick / back-order** on pick lists, **checklists / inspections** (templates → per-job fillable), **deposits / progress billing** (staged invoices), and **service agreements / recurring** (cadence-driven job generation). Test suite 203 → 232. Brief rows now also ✅: **Checklists / Inspections**, **Service Agreements**; inventory-spec gaps closed: QR labels, movement history, item photos, serialized-asset UI, back-order/short-pick.
+Since the month-end checkpoint: **QR label generation** (items/assets/locations, scanner-ready tokens), **short-pick / back-order** on pick lists, **checklists / inspections** (templates → per-job fillable), **deposits / progress billing** (staged invoices), and **service agreements / recurring** (cadence-driven job generation). Then a **platform** wave: **per-tenant SMTP** email settings, **editable email templates** (safe `{{ token }}` substitution), and a **first-party developer JSON API** (`/api/v1`, hashed bearer tokens, tenant-scoped). Test suite 203 → 252. Brief rows now also ✅: **Checklists / Inspections**, **Service Agreements**; inventory-spec gaps closed: QR labels, movement history, item photos, serialized-asset UI, back-order/short-pick. Invoice-Ninja-style gaps closed: per-tenant SMTP, editable email templates.
 
-**Still open (next priorities):** camera barcode/QR scanning (needs a screenshot loop to tune UX — labels/tokens already exist to scan); online payments + client portal (needs gateway accounts); expense/receipt OCR (needs AI-gateway details); recurring *invoices* specifically; Sage + Discord integrations; production hardening (subdomains/TLS/backups).
+**Still open (next priorities):** camera barcode/QR scanning (needs a screenshot loop to tune UX — labels/tokens already exist to scan); online payments + client portal (needs gateway accounts); expense/receipt OCR (needs AI-gateway details); recurring *invoices* specifically; API writes/webhooks; user-editable **print/PDF** doc templates (email templates done); Sage + Discord integrations; production hardening (subdomains/TLS/backups).
 
 ---
 
