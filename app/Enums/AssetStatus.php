@@ -16,4 +16,13 @@ enum AssetStatus: string
             self::Retired => 'Retired',
         };
     }
+
+    public function badgeClasses(): string
+    {
+        return match ($this) {
+            self::InStock => 'bg-green-100 text-green-800',
+            self::Deployed => 'bg-blue-100 text-blue-800',
+            self::Retired => 'bg-gray-100 text-gray-600',
+        };
+    }
 }

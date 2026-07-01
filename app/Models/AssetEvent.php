@@ -34,4 +34,19 @@ class AssetEvent extends Model
     {
         return $this->belongsTo(SerializedAsset::class, 'serialized_asset_id');
     }
+
+    public function parentAsset(): BelongsTo
+    {
+        return $this->belongsTo(SerializedAsset::class, 'parent_asset_id');
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

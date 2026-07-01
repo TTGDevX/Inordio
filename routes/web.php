@@ -68,6 +68,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Stock movement log (the ledger, surfaced)
     Volt::route('movements', 'movements.index')->name('movements.index');
 
+    // Serialized assets (the nested-equipment "LEGO" model). Static "create"
+    // before the {assetId} wildcard; param is {assetId} (not {asset}) so the
+    // component resolves it under tenancy in mount().
+    Volt::route('assets', 'assets.index')->name('assets.index');
+    Volt::route('assets/create', 'assets.form')->name('assets.create');
+    Volt::route('assets/{assetId}/edit', 'assets.form')->name('assets.edit');
+    Volt::route('assets/{assetId}', 'assets.show')->name('assets.show');
+
     // Customers. Static "create" before the {customerId} wildcard; param is
     // {customerId} (not {customer}) to avoid Livewire route-model binding.
     Volt::route('customers', 'customers.index')->name('customers.index');
