@@ -6,10 +6,17 @@ use App\Models\Location;
 use App\Models\Supplier;
 use App\Services\StockManager;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
+use Livewire\WithFileUploads;
 
 new #[Layout('layouts.app')] class extends Component {
+    use WithFileUploads;
+
     public InventoryItem $item;
+
+    #[Validate('nullable|image|max:8192')]
+    public $photo = null;
 
     // Stock-action form state.
     public string $action = 'receive';
@@ -58,6 +65,44 @@ new #[Layout('layouts.app')] class extends Component {
         $this->item->update(['is_active' => ! $this->item->is_active]);
         $this->reloadItem();
         $this->statusMessage = $this->item->is_active ? 'Item restored.' : 'Item archived.';
+    }
+
+    /**
+     * Upload (or replace) the item's photo. Stored tenant-prefixed on the
+     * public disk; the old file is cleaned up. Office+ only.
+     */
+    public function savePhoto(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+        $this->validate();
+
+        if (! $this->photo) {
+            return;
+        }
+
+        $old = $this->item->photo_path;
+        $path = $this->photo->store('item-photos/'.tenant('id'), 'public');
+        $this->item->update(['photo_path' => $path]);
+
+        if ($old) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($old);
+        }
+
+        $this->reset('photo');
+        $this->reloadItem();
+        $this->statusMessage = 'Photo updated.';
+    }
+
+    public function removePhoto(): void
+    {
+        abort_unless(\Illuminate\Support\Facades\Gate::allows('manage-inventory'), 403);
+
+        if ($this->item->photo_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->item->photo_path);
+            $this->item->update(['photo_path' => null]);
+            $this->reloadItem();
+            $this->statusMessage = 'Photo removed.';
+        }
     }
 
     public function addOffering(): void
@@ -178,6 +223,9 @@ new #[Layout('layouts.app')] class extends Component {
             'total' => (float) $this->item->stockLevels->sum('quantity'),
             'locations' => Location::where('is_active', true)->orderBy('name')->get(),
             'suppliers' => Supplier::orderBy('name')->get(),
+            'movements' => $this->item->movements()
+                ->with(['fromLocation', 'toLocation', 'user', 'job', 'supplier'])
+                ->latest()->limit(15)->get(),
         ];
     }
 }; ?>
@@ -220,6 +268,33 @@ new #[Layout('layouts.app')] class extends Component {
                 @if ($item->is_serialized)
                     <span class="self-start inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">Serialized</span>
                 @endif
+            </div>
+
+            {{-- Item photo (single primary image via photo_path) --}}
+            <div class="mt-4 flex flex-wrap items-start gap-4">
+                @if ($item->photo_path)
+                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($item->photo_path) }}" target="_blank">
+                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($item->photo_path) }}"
+                             alt="{{ $item->name }}" class="h-28 w-28 rounded-md object-cover border border-gray-100">
+                    </a>
+                @else
+                    <div class="flex h-28 w-28 items-center justify-center rounded-md border border-dashed border-gray-200 text-xs text-gray-400">No photo</div>
+                @endif
+
+                @can('manage-inventory')
+                    <div class="space-y-2">
+                        <input type="file" wire:model="photo" accept="image/*" capture="environment"
+                            class="block text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-indigo-700 hover:file:bg-indigo-100">
+                        @error('photo') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                        <div wire:loading wire:target="photo" class="text-xs text-gray-500">Uploading…</div>
+                        <div class="flex gap-3">
+                            <x-secondary-button wire:click="savePhoto" type="button" wire:loading.attr="disabled" wire:target="photo,savePhoto">{{ $item->photo_path ? 'Replace photo' : 'Add photo' }}</x-secondary-button>
+                            @if ($item->photo_path)
+                                <button type="button" wire:click="removePhoto" wire:confirm="Remove this photo?" class="text-sm text-red-600 hover:text-red-800">Remove</button>
+                            @endif
+                        </div>
+                    </div>
+                @endcan
             </div>
 
             <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4 text-sm">
@@ -365,6 +440,45 @@ new #[Layout('layouts.app')] class extends Component {
                         </li>
                     @endforeach
                 </ul>
+            @endif
+        </div>
+
+        {{-- Movement history: the ledger for this item, surfaced --}}
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+                <h2 class="font-medium text-gray-800">Recent movements</h2>
+                @can('manage-inventory')
+                    <a href="{{ route('movements.index', ['itemId' => $item->id]) }}" wire:navigate
+                       class="text-sm text-indigo-600 hover:text-indigo-800">View full log</a>
+                @endcan
+            </div>
+
+            @if ($movements->isEmpty())
+                <p class="px-5 py-6 text-sm text-gray-500">No movements recorded yet.</p>
+            @else
+                <table class="min-w-full divide-y divide-gray-100 text-sm">
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($movements as $m)
+                            <tr wire:key="imv-{{ $m->id }}">
+                                <td class="px-5 py-2 whitespace-nowrap text-gray-500">{{ $m->created_at->format('M j, g:i A') }}</td>
+                                <td class="px-3 py-2">
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $m->type->badgeClasses() }}">{{ $m->type->label() }}</span>
+                                </td>
+                                <td class="px-3 py-2 text-right tabular-nums">{{ rtrim(rtrim(number_format((float) $m->quantity, 2), '0'), '.') }}</td>
+                                <td class="px-3 py-2 text-gray-600">{{ $m->fromLocation?->name ?? '—' }} <span class="text-gray-400">→</span> {{ $m->toLocation?->name ?? '—' }}</td>
+                                <td class="px-5 py-2 text-gray-500">
+                                    @if ($m->job)
+                                        <a href="{{ route('jobs.show', $m->job_id) }}" wire:navigate class="font-mono text-indigo-600 hover:text-indigo-800">{{ $m->job->number }}</a>
+                                    @elseif ($m->supplier)
+                                        {{ $m->supplier->name }}
+                                    @else
+                                        {{ $m->user?->name }}
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             @endif
         </div>
 

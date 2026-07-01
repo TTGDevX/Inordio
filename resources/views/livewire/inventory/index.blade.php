@@ -52,6 +52,10 @@ new #[Layout('layouts.app')] class extends Component {
         <div class="flex items-center justify-between gap-3">
             <h1 class="text-xl font-semibold text-gray-800">Inventory</h1>
             @can('manage-inventory')
+                <a href="{{ route('movements.index') }}" wire:navigate
+                   class="me-2 inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                    Movement log
+                </a>
                 <a href="{{ route('exports.inventory') }}"
                    class="me-2 inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
                     Export CSV
@@ -131,10 +135,18 @@ new #[Layout('layouts.app')] class extends Component {
                             <tr wire:key="item-{{ $item->id }}" class="hover:bg-gray-50 cursor-pointer"
                                 onclick="window.location='{{ route('inventory.show', $item) }}'">
                                 <td class="px-6 py-3">
-                                    <div class="font-medium text-gray-900">{{ $item->name }}</div>
-                                    @if ($item->is_serialized)
-                                        <span class="text-xs text-indigo-700">Serialized</span>
-                                    @endif
+                                    <div class="flex items-center gap-3">
+                                        @if ($item->photo_path)
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($item->photo_path) }}"
+                                                 alt="" class="h-9 w-9 rounded object-cover border border-gray-100 shrink-0">
+                                        @endif
+                                        <div>
+                                            <div class="font-medium text-gray-900">{{ $item->name }}</div>
+                                            @if ($item->is_serialized)
+                                                <span class="text-xs text-indigo-700">Serialized</span>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-3 font-mono text-sm text-gray-600">{{ $item->internal_sku }}</td>
                                 <td class="px-6 py-3 text-right tabular-nums text-gray-900">

@@ -22,4 +22,14 @@ enum StockMovementType: string
     {
         return ucfirst($this->value);
     }
+
+    public function badgeClasses(): string
+    {
+        return match ($this) {
+            self::Receipt => 'bg-green-100 text-green-800',
+            self::Transfer => 'bg-blue-100 text-blue-800',
+            self::Usage => 'bg-amber-100 text-amber-800',
+            self::Adjustment => 'bg-gray-100 text-gray-700',
+        };
+    }
 }

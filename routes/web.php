@@ -65,6 +65,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Locations
     Volt::route('locations', 'locations.index')->name('locations.index');
 
+    // Stock movement log (the ledger, surfaced)
+    Volt::route('movements', 'movements.index')->name('movements.index');
+
     // Customers. Static "create" before the {customerId} wildcard; param is
     // {customerId} (not {customer}) to avoid Livewire route-model binding.
     Volt::route('customers', 'customers.index')->name('customers.index');
