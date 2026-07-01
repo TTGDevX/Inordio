@@ -11,6 +11,7 @@ enum PaymentMethod: string
     case Cash = 'cash';
     case Cheque = 'cheque';
     case ETransfer = 'etransfer';
+    case Eft = 'eft';
     case Card = 'card';
     case Other = 'other';
 
@@ -20,6 +21,7 @@ enum PaymentMethod: string
             self::Cash => 'Cash',
             self::Cheque => 'Cheque',
             self::ETransfer => 'Interac e-Transfer',
+            self::Eft => 'EFT / direct deposit',
             self::Card => 'Credit/Debit card',
             self::Other => 'Other',
         };

@@ -104,6 +104,10 @@ new class extends Component
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        <x-dropdown-link :href="route('help')" wire:navigate>
+                            {{ __('Help & guide') }}
+                        </x-dropdown-link>
+
                         @can('manage-settings')
                             <x-dropdown-link :href="route('settings.company')" wire:navigate>
                                 {{ __('Company settings') }}

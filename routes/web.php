@@ -33,6 +33,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // In-app notifications.
     Volt::route('notifications', 'notifications')->name('notifications');
 
+    // Help / documentation.
+    Volt::route('help', 'help')->name('help');
+
     // Audit trail (Admin+)
     Volt::route('audit', 'audit.index')->name('audit.index');
 

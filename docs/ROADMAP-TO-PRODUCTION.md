@@ -27,7 +27,11 @@ What remains is (A) a handful of build-ready features, (B) things that need an a
 
 ## B. Needs an account or credentials from Scott
 
-13. **Online payments + pay-by-link** — Stripe / Square / Interac / Rotessa. Needs gateway account(s).
+13. **Getting paid — Canadian-first** (needs accounts/decisions):
+    - **Interac e-Transfer is the norm** for Canadian trades and **auto-deposits to the bank** — so the priority is *reconciliation*, not a card checkout: record the deposit against the invoice (payment method + reference already supported; consider matching by amount/reference or a bank-feed import later). e-Transfer + EFT/direct-deposit are recorded manually today, which fits how the money actually arrives.
+    - **EFT / pre-authorized debit** (recurring) — e.g. Rotessa (Canadian) for service-agreement billing.
+    - **Card pay-by-link** — Stripe/Square are card-first and more US-centric; lower priority for a Canadian trades shop. Only wire this if customers actually want to pay by card online.
+    - Payment methods now include cash, cheque, **Interac e-Transfer**, **EFT / direct deposit**, card, other.
 14. **Client portal** — customers log in to view/approve quotes and pay invoices (depends on #13).
 15. **Expense / receipt OCR** — needs the TTG local AI-gateway endpoint/auth details (brief §8).
 16. **Sage integration** — accounting export/sync (brief phase 8).
