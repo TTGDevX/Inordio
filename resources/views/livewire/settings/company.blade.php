@@ -22,6 +22,10 @@ new #[Layout('layouts.app')] class extends Component {
     public string $payment_terms = '';
     public string $invoice_footer = '';
     public string $accent_color = '#4f46e5';
+    public string $invoice_prefix = 'INV-';
+    public int $invoice_next_number = 1;
+    public string $quote_prefix = 'Q-';
+    public int $quote_next_number = 1;
     public ?string $existingLogo = null;
 
     public $logo = null; // temporary upload
@@ -45,6 +49,10 @@ new #[Layout('layouts.app')] class extends Component {
         $this->payment_terms = (string) $s->payment_terms;
         $this->invoice_footer = (string) $s->invoice_footer;
         $this->accent_color = $s->accent_color ?: '#4f46e5';
+        $this->invoice_prefix = $s->invoice_prefix ?? 'INV-';
+        $this->invoice_next_number = (int) ($s->invoice_next_number ?: 1);
+        $this->quote_prefix = $s->quote_prefix ?? 'Q-';
+        $this->quote_next_number = (int) ($s->quote_next_number ?: 1);
         $this->existingLogo = $s->logo_path;
     }
 
@@ -64,6 +72,10 @@ new #[Layout('layouts.app')] class extends Component {
             'payment_terms' => ['nullable', 'string', 'max:255'],
             'invoice_footer' => ['nullable', 'string', 'max:1000'],
             'accent_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'invoice_prefix' => ['nullable', 'string', 'max:12'],
+            'invoice_next_number' => ['required', 'integer', 'min:1'],
+            'quote_prefix' => ['nullable', 'string', 'max:12'],
+            'quote_next_number' => ['required', 'integer', 'min:1'],
             'logo' => ['nullable', 'image', 'max:2048'],
         ];
     }
@@ -194,6 +206,33 @@ new #[Layout('layouts.app')] class extends Component {
                 <textarea id="invoice_footer" wire:model="invoice_footer" rows="2"
                     class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     placeholder="e.g. payment instructions, thank-you note"></textarea>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4">
+                <h2 class="text-sm font-semibold text-gray-700">Document numbering</h2>
+                <p class="mt-1 text-xs text-gray-500">Prefix and the next number for new invoices and quotes. Each is a per-company sequence; changing "next number" only affects documents created from now on.</p>
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <x-input-label for="invoice_prefix" value="Invoice prefix" />
+                        <x-text-input id="invoice_prefix" wire:model="invoice_prefix" class="block mt-1 w-full" placeholder="INV-" />
+                        <x-input-error :messages="$errors->get('invoice_prefix')" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-input-label for="invoice_next_number" value="Next invoice number" />
+                        <x-text-input id="invoice_next_number" type="number" min="1" wire:model="invoice_next_number" class="block mt-1 w-full" />
+                        <x-input-error :messages="$errors->get('invoice_next_number')" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-input-label for="quote_prefix" value="Quote prefix" />
+                        <x-text-input id="quote_prefix" wire:model="quote_prefix" class="block mt-1 w-full" placeholder="Q-" />
+                        <x-input-error :messages="$errors->get('quote_prefix')" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-input-label for="quote_next_number" value="Next quote number" />
+                        <x-text-input id="quote_next_number" type="number" min="1" wire:model="quote_next_number" class="block mt-1 w-full" />
+                        <x-input-error :messages="$errors->get('quote_next_number')" class="mt-2" />
+                    </div>
+                </div>
             </div>
 
             <div class="pt-2">

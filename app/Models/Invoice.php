@@ -45,7 +45,7 @@ class Invoice extends Model
         static::created(function (Invoice $invoice) {
             if (! $invoice->number) {
                 $invoice->forceFill([
-                    'number' => 'INV-'.str_pad((string) $invoice->id, 5, '0', STR_PAD_LEFT),
+                    'number' => CompanySetting::allocateNumber('invoice'),
                 ])->saveQuietly();
             }
         });

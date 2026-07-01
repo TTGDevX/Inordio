@@ -56,7 +56,7 @@ class InvoiceManagementTest extends TestCase
         $this->assertSame('ON', $invoice->province->value);
         $this->assertEqualsWithDelta(13.0, (float) $invoice->tax_total, 0.001);
         $this->assertEqualsWithDelta(113.0, $invoice->total(), 0.001);
-        $this->assertSame('INV-'.str_pad((string) $invoice->id, 5, '0', STR_PAD_LEFT), $invoice->number);
+        $this->assertMatchesRegularExpression('/^INV-\d{5}$/', $invoice->number);
     }
 
     public function test_tax_exempt_customer_invoice_has_no_tax(): void

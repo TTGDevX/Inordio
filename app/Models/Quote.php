@@ -36,7 +36,7 @@ class Quote extends Model
         static::created(function (Quote $quote) {
             if (! $quote->number) {
                 $quote->forceFill([
-                    'number' => 'Q-'.str_pad((string) $quote->id, 5, '0', STR_PAD_LEFT),
+                    'number' => CompanySetting::allocateNumber('quote'),
                 ])->saveQuietly();
             }
         });

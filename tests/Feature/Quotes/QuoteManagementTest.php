@@ -60,7 +60,7 @@ class QuoteManagementTest extends TestCase
         // 2*50 + 3*10 = 130, pre-tax.
         $this->assertEqualsWithDelta(130.0, $quote->subtotal(), 0.001);
         // Auto-numbered on create.
-        $this->assertSame('Q-'.str_pad((string) $quote->id, 5, '0', STR_PAD_LEFT), $quote->number);
+        $this->assertMatchesRegularExpression('/^Q-\d{5}$/', $quote->number);
     }
 
     public function test_selecting_a_catalogue_item_prefills_description_and_price(): void
