@@ -1,6 +1,6 @@
 # Inordio — Claude Code context
 
-**Resuming the build?** Read **`docs/PROGRESS.md`** first — it captures exactly what's built (Phases 0–5: the full quote→job→invoice→payment spine), the established code conventions, hard-won gotchas, the prioritized roadmap, and how to run the tests. Then read **PROJECT-BRIEF.md** (scope/architecture source of truth). Key rules:
+**Resuming the build?** Start with **`docs/FOR-CLAUDE-CODE.md`** (how we work + gotchas), then **`docs/PROGRESS.md`** (everything built — well past the MVP spine now; 295 tests green), **`docs/ROADMAP-TO-PRODUCTION.md`** (what's left), **`docs/RESUME-FROM-HOME.md`** (run it locally), and **PROJECT-BRIEF.md** (scope/architecture source of truth). Key rules:
 
 - Stack is Laravel 12 + Livewire 3 + MySQL 8 + stancl/tenancy. **Decided — do not relitigate.** No forks of third-party apps; everything is first-party.
 - Every tenant-scoped table needs `tenant_id`. **Write tenant-isolation tests with every feature** — data leakage between tenants is the worst possible bug in this product.
